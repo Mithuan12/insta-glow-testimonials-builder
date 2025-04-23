@@ -100,6 +100,8 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
 
   const addTestimonial = async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
     try {
+      console.log("Adding testimonial:", testimonial); // Debug log
+      
       // In a real app, this would be an API call
       const newTestimonial: Testimonial = {
         ...testimonial,
@@ -108,11 +110,13 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
         published: false,
       };
       
-      setTestimonials([...testimonials, newTestimonial]);
+      setTestimonials(prev => [...prev, newTestimonial]);
+      
       toast({
         title: "Success!",
         description: "Testimonial has been submitted successfully.",
       });
+      
       return Promise.resolve();
     } catch (err) {
       console.error("Error adding testimonial:", err);

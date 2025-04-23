@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +8,7 @@ import TestimonialDisplay from "./TestimonialDisplay";
 
 const Dashboard = () => {
   const { testimonials, notifications } = useTestimonials();
+  console.log("Current testimonials:", testimonials); // Debug log to see testimonials
   
   const publishedTestimonials = testimonials.filter(t => t.published);
   
