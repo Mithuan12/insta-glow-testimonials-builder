@@ -20,6 +20,7 @@ import MediaRecorder from "./MediaRecorder";
 import MediaTypeSelector from "./testimonial-form/MediaTypeSelector";
 import RatingStars from "./testimonial-form/RatingStars";
 import { testimonialFormSchema, type TestimonialFormData } from "./testimonial-form/testimonialFormSchema";
+import { supabase } from "@/integrations/supabase/client";
 
 type TestimonialFormProps = {
   onSuccess?: () => void;
@@ -66,7 +67,12 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       }
       
       await addTestimonial({
-        ...values,
+        customerName: values.customerName,
+        customerPhone: values.customerPhone,
+        customerEmail: values.customerEmail,
+        message: values.message,
+        rating: values.rating,
+        mediaType: values.mediaType,
         mediaUrl,
       });
 
