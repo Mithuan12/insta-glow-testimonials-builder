@@ -8,7 +8,18 @@ export interface Testimonial {
   createdAt: string;
   template?: string;
   published: boolean;
-  imageUrl?: string;
+  mediaType?: 'text' | 'audio' | 'video';
+  mediaUrl?: string;
+}
+
+export interface NewTestimonial {
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  message: string;
+  rating: number;
+  mediaType?: 'text' | 'audio' | 'video';
+  mediaUrl?: string;
 }
 
 export interface Template {
@@ -29,12 +40,4 @@ export interface SMSNotification {
   status: 'pending' | 'sent' | 'failed';
   createdAt: string;
   formUrl: string;
-}
-
-export interface NewTestimonial {
-  customerName: string;
-  customerPhone: string;
-  customerEmail?: string;
-  message: string;
-  rating: number;
 }

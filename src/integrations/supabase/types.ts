@@ -70,6 +70,8 @@ export type Database = {
           customer_name: string
           customer_phone: string | null
           id: string
+          media_type: string | null
+          media_url: string | null
           message: string
           published: boolean | null
           rating: number | null
@@ -82,6 +84,8 @@ export type Database = {
           customer_name: string
           customer_phone?: string | null
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           message: string
           published?: boolean | null
           rating?: number | null
@@ -94,6 +98,8 @@ export type Database = {
           customer_name?: string
           customer_phone?: string | null
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           message?: string
           published?: boolean | null
           rating?: number | null

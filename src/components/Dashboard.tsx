@@ -1,9 +1,9 @@
-
 import React from "react";
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Send, Image } from "lucide-react";
 import NotificationList from "./NotificationList";
+import TestimonialDisplay from "./TestimonialDisplay";
 
 const Dashboard = () => {
   const { testimonials, notifications } = useTestimonials();
@@ -51,14 +51,7 @@ const Dashboard = () => {
           {testimonials.length > 0 ? (
             <div className="space-y-4">
               {testimonials.slice(0, 3).map(testimonial => (
-                <Card key={testimonial.id}>
-                  <CardContent className="pt-6">
-                    <div className="font-medium">{testimonial.customerName}</div>
-                    <p className="text-muted-foreground line-clamp-2 text-sm mt-1">
-                      "{testimonial.message}"
-                    </p>
-                  </CardContent>
-                </Card>
+                <TestimonialDisplay key={testimonial.id} testimonial={testimonial} />
               ))}
             </div>
           ) : (

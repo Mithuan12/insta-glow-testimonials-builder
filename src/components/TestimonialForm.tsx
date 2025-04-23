@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -15,9 +15,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useTestimonials } from "@/context/TestimonialContext";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { NewTestimonial } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import { Video, Mic, FileText } from "lucide-react";
 
 const formSchema = z.object({
   customerName: z.string().min(2, {
@@ -31,6 +33,7 @@ const formSchema = z.object({
     message: "Testimonial must be at least 5 characters.",
   }),
   rating: z.number().min(1).max(5),
+  mediaType: z.enum(["text", "audio", "video"]),
 });
 
 type TestimonialFormValues = z.infer<typeof formSchema>;
@@ -42,6 +45,7 @@ type TestimonialFormProps = {
 const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   const { addTestimonial } = useTestimonials();
   const { toast } = useToast();
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   
   const form = useForm<TestimonialFormValues>({
     resolver: zodResolver(formSchema),
@@ -51,23 +55,48 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       customerEmail: "",
       message: "",
       rating: 5,
+      mediaType: "text",
     },
   });
 
+  const uploadMedia = async (file: File) => {
+    const fileExt = file.name.split('.').pop();
+    const filename = `${Math.random()}.${fileExt}`;
+    const { data, error } = await supabase.storage
+      .from('testimonial-media')
+      .upload(filename, file);
+
+    if (error) throw error;
+    return data.path;
+  };
+
   const onSubmit = async (values: TestimonialFormValues) => {
     try {
-      // Convert values to the expected NewTestimonial type
+      let mediaUrl = undefined;
+      
+      if (mediaFile && values.mediaType !== 'text') {
+        mediaUrl = await uploadMedia(mediaFile);
+      }
+      
       const testimonialData: NewTestimonial = {
         customerName: values.customerName,
         customerPhone: values.customerPhone,
         customerEmail: values.customerEmail || undefined,
         message: values.message,
         rating: values.rating,
+        mediaType: values.mediaType,
+        mediaUrl,
       };
       
       await addTestimonial(testimonialData);
       form.reset();
+      setMediaFile(null);
       if (onSuccess) onSuccess();
+      
+      toast({
+        title: "Success",
+        description: "Your testimonial has been submitted successfully.",
+      });
     } catch (error) {
       console.error("Error submitting testimonial:", error);
       toast({
@@ -97,6 +126,13 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     );
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setMediaFile(file);
+    }
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -108,6 +144,50 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <div className="flex gap-4 mb-6">
+              <Button
+                type="button"
+                variant={form.getValues("mediaType") === "text" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => form.setValue("mediaType", "text")}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Text
+              </Button>
+              <Button
+                type="button"
+                variant={form.getValues("mediaType") === "audio" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => form.setValue("mediaType", "audio")}
+              >
+                <Mic className="w-4 h-4 mr-2" />
+                Audio
+              </Button>
+              <Button
+                type="button"
+                variant={form.getValues("mediaType") === "video" ? "default" : "outline"}
+                className="flex-1"
+                onClick={() => form.setValue("mediaType", "video")}
+              >
+                <Video className="w-4 h-4 mr-2" />
+                Video
+              </Button>
+            </div>
+
+            {form.getValues("mediaType") !== "text" && (
+              <FormItem>
+                <FormLabel>Upload {form.getValues("mediaType")}</FormLabel>
+                <FormControl>
+                  <Input
+                    type="file"
+                    accept={form.getValues("mediaType") === "audio" ? "audio/*" : "video/*"}
+                    onChange={handleFileChange}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+
             <FormField
               control={form.control}
               name="customerName"
@@ -147,6 +227,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="rating"
@@ -161,6 +242,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="message"
