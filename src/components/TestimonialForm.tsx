@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +15,6 @@ import {
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import MediaRecorder from "./MediaRecorder";
 import MediaTypeSelector from "./testimonial-form/MediaTypeSelector";
 import RatingStars from "./testimonial-form/RatingStars";
 import { testimonialFormSchema, type TestimonialFormData } from "./testimonial-form/testimonialFormSchema";
@@ -30,7 +28,6 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   const { addTestimonial } = useTestimonials();
   const { toast } = useToast();
   const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
   
   const form = useForm<TestimonialFormData>({
     resolver: zodResolver(testimonialFormSchema),
@@ -44,17 +41,12 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     },
   });
 
-  const handleRecordingComplete = (blob: Blob) => {
-    setMediaBlob(blob);
-    setIsRecording(false);
+  const handleFileSelect = (file: File) => {
+    setMediaBlob(file);
     toast({
-      title: "Recording completed",
-      description: "Your recording has been saved successfully.",
+      title: "File selected",
+      description: "Your audio file has been selected successfully.",
     });
-  };
-
-  const startRecording = () => {
-    setIsRecording(true);
   };
 
   const onSubmit = async (values: TestimonialFormData) => {
@@ -62,7 +54,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       let mediaUrl = undefined;
       
       if (values.mediaType !== 'text' && mediaBlob) {
-        const fileExt = 'webm';
+        const fileExt = mediaBlob.type.split('/')[1] || 'webm';
         const filename = `${Math.random()}.${fileExt}`;
         const { data, error } = await supabase.storage
           .from('testimonial-media')
@@ -84,7 +76,6 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
 
       form.reset();
       setMediaBlob(null);
-      setIsRecording(false);
       if (onSuccess) onSuccess();
       
       toast({
@@ -112,16 +103,17 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <MediaTypeSelector form={form} onRecord={startRecording} />
+            <MediaTypeSelector form={form} onFileSelect={handleFileSelect} />
 
-            {isRecording && (
+            {mediaBlob && (
               <FormItem>
-                <FormLabel>Recording</FormLabel>
+                <FormLabel>Selected Audio File</FormLabel>
                 <FormControl>
-                  <MediaRecorder
-                    mediaType="audio"
-                    onRecordingComplete={handleRecordingComplete}
-                  />
+                  <div className="p-4 border rounded-md bg-muted">
+                    <p className="text-sm text-muted-foreground">
+                      Audio file selected: {(mediaBlob as File).name || 'audio file'}
+                    </p>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

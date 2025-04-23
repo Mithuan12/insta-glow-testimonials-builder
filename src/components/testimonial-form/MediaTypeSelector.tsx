@@ -1,16 +1,24 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { FileText, Mic } from 'lucide-react';
+import { FileText, Upload } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
 
 interface MediaTypeSelectorProps {
   form: UseFormReturn<any>;
-  onRecord: () => void;
+  onFileSelect: (file: File) => void;
 }
 
-const MediaTypeSelector: React.FC<MediaTypeSelectorProps> = ({ form, onRecord }) => {
+const MediaTypeSelector: React.FC<MediaTypeSelectorProps> = ({ form, onFileSelect }) => {
   const mediaType = form.getValues("mediaType");
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onFileSelect(file);
+      form.setValue("mediaType", "audio");
+    }
+  };
   
   return (
     <div className="flex gap-4 mb-6">
@@ -27,14 +35,18 @@ const MediaTypeSelector: React.FC<MediaTypeSelectorProps> = ({ form, onRecord })
         type="button"
         variant={mediaType !== "text" ? "default" : "outline"}
         className="flex-1"
-        onClick={() => {
-          onRecord();
-          form.setValue("mediaType", "audio");
-        }}
+        onClick={() => document.getElementById('audio-upload')?.click()}
       >
-        <Mic className="w-4 h-4 mr-2" />
-        Record Audio
+        <Upload className="w-4 h-4 mr-2" />
+        Upload Audio
       </Button>
+      <input
+        id="audio-upload"
+        type="file"
+        accept="audio/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
     </div>
   );
 };
