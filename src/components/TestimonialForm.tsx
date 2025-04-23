@@ -8,7 +8,6 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -20,6 +19,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { NewTestimonial } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { Video, Mic, FileText } from "lucide-react";
+import MediaRecorder from "./MediaRecorder";
 
 const formSchema = z.object({
   customerName: z.string().min(2, {
@@ -36,8 +36,6 @@ const formSchema = z.object({
   mediaType: z.enum(["text", "audio", "video"]),
 });
 
-type TestimonialFormValues = z.infer<typeof formSchema>;
-
 type TestimonialFormProps = {
   onSuccess?: () => void;
 };
@@ -46,8 +44,9 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   const { addTestimonial } = useTestimonials();
   const { toast } = useToast();
   const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
   
-  const form = useForm<TestimonialFormValues>({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       customerName: "",
@@ -59,8 +58,16 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     },
   });
 
-  const uploadMedia = async (file: File) => {
-    const fileExt = file.name.split('.').pop();
+  const handleRecordingComplete = (blob: Blob) => {
+    setMediaBlob(blob);
+    toast({
+      title: "Recording completed",
+      description: "Your recording has been saved successfully.",
+    });
+  };
+
+  const uploadMedia = async (file: File | Blob) => {
+    const fileExt = file instanceof File ? file.name.split('.').pop() : 'webm';
     const filename = `${Math.random()}.${fileExt}`;
     const { data, error } = await supabase.storage
       .from('testimonial-media')
@@ -70,12 +77,15 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     return data.path;
   };
 
-  const onSubmit = async (values: TestimonialFormValues) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       let mediaUrl = undefined;
       
-      if (mediaFile && values.mediaType !== 'text') {
-        mediaUrl = await uploadMedia(mediaFile);
+      if (values.mediaType !== 'text') {
+        const fileToUpload = mediaBlob || mediaFile;
+        if (fileToUpload) {
+          mediaUrl = await uploadMedia(fileToUpload);
+        }
       }
       
       const testimonialData: NewTestimonial = {
@@ -91,6 +101,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       await addTestimonial(testimonialData);
       form.reset();
       setMediaFile(null);
+      setMediaBlob(null);
       if (onSuccess) onSuccess();
       
       toast({
@@ -106,7 +117,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       });
     }
   };
-  
+
   const renderStars = () => {
     const rating = form.watch("rating");
     
@@ -124,13 +135,6 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
         ))}
       </div>
     );
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setMediaFile(file);
-    }
   };
 
   return (
@@ -176,12 +180,11 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
 
             {form.getValues("mediaType") !== "text" && (
               <FormItem>
-                <FormLabel>Upload {form.getValues("mediaType")}</FormLabel>
+                <FormLabel>Record {form.getValues("mediaType")}</FormLabel>
                 <FormControl>
-                  <Input
-                    type="file"
-                    accept={form.getValues("mediaType") === "audio" ? "audio/*" : "video/*"}
-                    onChange={handleFileChange}
+                  <MediaRecorder
+                    mediaType={form.getValues("mediaType") as 'audio' | 'video'}
+                    onRecordingComplete={handleRecordingComplete}
                   />
                 </FormControl>
                 <FormMessage />
