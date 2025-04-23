@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,7 +16,7 @@ import {
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Send } from "lucide-react";
+import { Send, Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   customerName: z.string().min(2, {
@@ -30,6 +30,7 @@ const formSchema = z.object({
 const SMSForm = () => {
   const { addSMSNotification } = useTestimonials();
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,12 +40,33 @@ const SMSForm = () => {
     },
   });
 
+  const formatPhoneNumber = (phone: string): string => {
+    // Strip any non-numeric characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Ensure it starts with country code if missing
+    if (!cleaned.startsWith('1') && cleaned.length === 10) {
+      return `1${cleaned}`;
+    }
+    
+    return cleaned;
+  };
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      setIsSubmitting(true);
+      const formattedPhone = formatPhoneNumber(values.customerPhone);
+      
+      console.log("Sending SMS to:", {
+        name: values.customerName,
+        phone: formattedPhone
+      });
+      
       await addSMSNotification({
         customerName: values.customerName,
-        customerPhone: values.customerPhone,
+        customerPhone: formattedPhone,
       });
+      
       form.reset();
     } catch (error) {
       console.error("Error sending SMS notification:", error);
@@ -53,6 +75,8 @@ const SMSForm = () => {
         description: "Failed to send SMS notification. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -93,9 +117,22 @@ const SMSForm = () => {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              <Send className="mr-2 h-4 w-4" />
-              Send Form Link
+            <Button 
+              type="submit" 
+              className="w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Form Link
+                </>
+              )}
             </Button>
           </form>
         </Form>

@@ -2,6 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { Testimonial, Template, SMSNotification } from "@/types";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TestimonialContextType {
   testimonials: Testimonial[];
@@ -130,20 +131,27 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
       const formId = Date.now().toString(36) + Math.random().toString(36).substr(2);
       const formUrl = `${window.location.origin}/form/${formId}`;
       
-      // In a real app, this would call an SMS API
+      // Simulate SMS sending - in a real app, we would call a Twilio API or similar here
+      console.log(`Sending SMS to ${notification.customerPhone} with form URL: ${formUrl}`);
+      
+      // Create the new notification
       const newNotification: SMSNotification = {
         ...notification,
         id: `sms-${Date.now()}`,
         createdAt: new Date().toISOString(),
-        status: 'sent', // Mock status
+        status: 'sent', // In real implementation, this would be 'pending' initially
         formUrl,
       };
       
-      setNotifications([...notifications, newNotification]);
+      // Update state with the new notification
+      setNotifications(prevNotifications => [...prevNotifications, newNotification]);
+      
+      // Show success toast
       toast({
         title: "SMS Notification Sent",
         description: `SMS notification to ${notification.customerName} has been sent.`,
       });
+      
       return Promise.resolve();
     } catch (err) {
       console.error("Error sending SMS notification:", err);
