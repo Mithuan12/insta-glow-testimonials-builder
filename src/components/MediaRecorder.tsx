@@ -1,7 +1,6 @@
-
 import React, { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, Video, VideoOff, Record } from "lucide-react";
+import { Mic, MicOff, Video, VideoOff } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface MediaRecorderProps {
@@ -9,10 +8,10 @@ interface MediaRecorderProps {
   onRecordingComplete: (blob: Blob) => void;
 }
 
-const MediaRecorder: React.FC<MediaRecorderProps> = ({ mediaType, onRecordingComplete }) => {
+const MediaRecorderComponent: React.FC<MediaRecorderProps> = ({ mediaType, onRecordingComplete }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaRecorderRef = useRef<any>(null);
   const chunksRef = useRef<Blob[]>([]);
   const videoPreviewRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
@@ -123,4 +122,4 @@ const MediaRecorder: React.FC<MediaRecorderProps> = ({ mediaType, onRecordingCom
   );
 };
 
-export default MediaRecorder;
+export default MediaRecorderComponent;

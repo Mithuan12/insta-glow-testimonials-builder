@@ -1,7 +1,7 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,25 +16,10 @@ import {
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { NewTestimonial } from "@/types";
-import { supabase } from "@/integrations/supabase/client";
-import { Video, Mic, FileText } from "lucide-react";
 import MediaRecorder from "./MediaRecorder";
-
-const formSchema = z.object({
-  customerName: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  customerPhone: z.string().min(10, {
-    message: "Please enter a valid phone number.",
-  }),
-  customerEmail: z.string().email({ message: "Please enter a valid email address." }).optional().or(z.literal("")),
-  message: z.string().min(5, {
-    message: "Testimonial must be at least 5 characters.",
-  }),
-  rating: z.number().min(1).max(5),
-  mediaType: z.enum(["text", "audio", "video"]),
-});
+import MediaTypeSelector from "./testimonial-form/MediaTypeSelector";
+import RatingStars from "./testimonial-form/RatingStars";
+import { testimonialFormSchema, type TestimonialFormData } from "./testimonial-form/testimonialFormSchema";
 
 type TestimonialFormProps = {
   onSuccess?: () => void;
@@ -43,11 +28,10 @@ type TestimonialFormProps = {
 const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   const { addTestimonial } = useTestimonials();
   const { toast } = useToast();
-  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
   
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<TestimonialFormData>({
+    resolver: zodResolver(testimonialFormSchema),
     defaultValues: {
       customerName: "",
       customerPhone: "",
@@ -66,41 +50,27 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     });
   };
 
-  const uploadMedia = async (file: File | Blob) => {
-    const fileExt = file instanceof File ? file.name.split('.').pop() : 'webm';
-    const filename = `${Math.random()}.${fileExt}`;
-    const { data, error } = await supabase.storage
-      .from('testimonial-media')
-      .upload(filename, file);
-
-    if (error) throw error;
-    return data.path;
-  };
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: TestimonialFormData) => {
     try {
       let mediaUrl = undefined;
       
-      if (values.mediaType !== 'text') {
-        const fileToUpload = mediaBlob || mediaFile;
-        if (fileToUpload) {
-          mediaUrl = await uploadMedia(fileToUpload);
-        }
+      if (values.mediaType !== 'text' && mediaBlob) {
+        const fileExt = 'webm';
+        const filename = `${Math.random()}.${fileExt}`;
+        const { data, error } = await supabase.storage
+          .from('testimonial-media')
+          .upload(filename, mediaBlob);
+
+        if (error) throw error;
+        mediaUrl = data.path;
       }
       
-      const testimonialData: NewTestimonial = {
-        customerName: values.customerName,
-        customerPhone: values.customerPhone,
-        customerEmail: values.customerEmail || undefined,
-        message: values.message,
-        rating: values.rating,
-        mediaType: values.mediaType,
+      await addTestimonial({
+        ...values,
         mediaUrl,
-      };
-      
-      await addTestimonial(testimonialData);
+      });
+
       form.reset();
-      setMediaFile(null);
       setMediaBlob(null);
       if (onSuccess) onSuccess();
       
@@ -118,25 +88,6 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     }
   };
 
-  const renderStars = () => {
-    const rating = form.watch("rating");
-    
-    return (
-      <div className="flex gap-1">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            type="button"
-            onClick={() => form.setValue("rating", star)}
-            className={`text-2xl ${star <= rating ? "text-amber-400" : "text-gray-300"}`}
-          >
-            ★
-          </button>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -148,35 +99,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="flex gap-4 mb-6">
-              <Button
-                type="button"
-                variant={form.getValues("mediaType") === "text" ? "default" : "outline"}
-                className="flex-1"
-                onClick={() => form.setValue("mediaType", "text")}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Text
-              </Button>
-              <Button
-                type="button"
-                variant={form.getValues("mediaType") === "audio" ? "default" : "outline"}
-                className="flex-1"
-                onClick={() => form.setValue("mediaType", "audio")}
-              >
-                <Mic className="w-4 h-4 mr-2" />
-                Audio
-              </Button>
-              <Button
-                type="button"
-                variant={form.getValues("mediaType") === "video" ? "default" : "outline"}
-                className="flex-1"
-                onClick={() => form.setValue("mediaType", "video")}
-              >
-                <Video className="w-4 h-4 mr-2" />
-                Video
-              </Button>
-            </div>
+            <MediaTypeSelector form={form} />
 
             {form.getValues("mediaType") !== "text" && (
               <FormItem>
@@ -204,6 +127,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="customerPhone"
@@ -217,6 +141,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="customerEmail"
@@ -231,20 +156,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="rating"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rating</FormLabel>
-                  <FormControl>
-                    <Input type="hidden" {...field} />
-                  </FormControl>
-                  {renderStars()}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <RatingStars form={form} />
             
             <FormField
               control={form.control}
