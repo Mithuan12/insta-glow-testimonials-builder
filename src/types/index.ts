@@ -1,4 +1,3 @@
-
 export interface Testimonial {
   id: string;
   customerName: string;
@@ -30,4 +29,12 @@ export interface SMSNotification {
   status: 'pending' | 'sent' | 'failed';
   createdAt: string;
   formUrl: string;
+}
+
+export interface NewTestimonial {
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  message: string;
+  rating: number;
 }
