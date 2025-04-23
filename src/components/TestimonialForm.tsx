@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +17,7 @@ import {
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { NewTestimonial } from "@/types";
 
 const formSchema = z.object({
   customerName: z.string().min(2, {
@@ -33,6 +33,8 @@ const formSchema = z.object({
   rating: z.number().min(1).max(5),
 });
 
+type TestimonialFormValues = z.infer<typeof formSchema>;
+
 type TestimonialFormProps = {
   onSuccess?: () => void;
 };
@@ -41,7 +43,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   const { addTestimonial } = useTestimonials();
   const { toast } = useToast();
   
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<TestimonialFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       customerName: "",
@@ -52,9 +54,18 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: TestimonialFormValues) => {
     try {
-      await addTestimonial(values);
+      // Convert values to the expected NewTestimonial type
+      const testimonialData: NewTestimonial = {
+        customerName: values.customerName,
+        customerPhone: values.customerPhone,
+        customerEmail: values.customerEmail || undefined,
+        message: values.message,
+        rating: values.rating,
+      };
+      
+      await addTestimonial(testimonialData);
       form.reset();
       if (onSuccess) onSuccess();
     } catch (error) {
