@@ -43,10 +43,20 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   });
 
   const handleFileSelect = (file: File) => {
+    // Validate file size (50MB limit)
+    if (file.size > 50 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 50MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setMediaBlob(file);
     toast({
-      title: "File selected",
-      description: "Your audio file has been selected successfully.",
+      title: "File Selected",
+      description: `${file.type.startsWith('audio/') ? 'Audio' : 'Video'} file has been selected.`,
     });
   };
 
@@ -108,11 +118,11 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
 
             {mediaBlob && (
               <FormItem>
-                <FormLabel>Selected Audio File</FormLabel>
+                <FormLabel>Selected Media File</FormLabel>
                 <FormControl>
                   <div className="p-4 border rounded-md bg-muted">
                     <p className="text-sm text-muted-foreground">
-                      Audio file selected: {(mediaBlob as File).name || 'audio file'}
+                      File selected: {(mediaBlob as File).name}
                     </p>
                   </div>
                 </FormControl>
