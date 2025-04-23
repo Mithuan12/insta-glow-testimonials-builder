@@ -30,6 +30,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   const { addTestimonial } = useTestimonials();
   const { toast } = useToast();
   const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
   
   const form = useForm<TestimonialFormData>({
     resolver: zodResolver(testimonialFormSchema),
@@ -45,10 +46,15 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
 
   const handleRecordingComplete = (blob: Blob) => {
     setMediaBlob(blob);
+    setIsRecording(false);
     toast({
       title: "Recording completed",
       description: "Your recording has been saved successfully.",
     });
+  };
+
+  const startRecording = () => {
+    setIsRecording(true);
   };
 
   const onSubmit = async (values: TestimonialFormData) => {
@@ -78,6 +84,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
 
       form.reset();
       setMediaBlob(null);
+      setIsRecording(false);
       if (onSuccess) onSuccess();
       
       toast({
@@ -105,14 +112,14 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <MediaTypeSelector form={form} />
+            <MediaTypeSelector form={form} onRecord={startRecording} />
 
-            {form.getValues("mediaType") !== "text" && (
+            {isRecording && (
               <FormItem>
-                <FormLabel>Record {form.getValues("mediaType")}</FormLabel>
+                <FormLabel>Recording</FormLabel>
                 <FormControl>
                   <MediaRecorder
-                    mediaType={form.getValues("mediaType") as 'audio' | 'video'}
+                    mediaType="audio"
                     onRecordingComplete={handleRecordingComplete}
                   />
                 </FormControl>
