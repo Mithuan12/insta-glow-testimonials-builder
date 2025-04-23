@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,15 @@ import { Copy } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const NotificationList = () => {
-  const { notifications } = useTestimonials();
+  const { notifications, loadNotifications } = useTestimonials();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Load notifications when component mounts
+    loadNotifications();
+  }, [loadNotifications]);
+
+  console.log("Current notifications in NotificationList:", notifications); // Debug log
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);

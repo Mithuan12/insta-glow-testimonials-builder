@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Send, Image } from "lucide-react";
@@ -7,8 +7,20 @@ import NotificationList from "./NotificationList";
 import TestimonialDisplay from "./TestimonialDisplay";
 
 const Dashboard = () => {
-  const { testimonials, notifications } = useTestimonials();
-  console.log("Current testimonials:", testimonials); // Debug log to see testimonials
+  const { testimonials, notifications, loadTestimonials, loadNotifications } = useTestimonials();
+  
+  useEffect(() => {
+    // Ensure testimonials and notifications are loaded when dashboard mounts
+    const loadData = async () => {
+      console.log("Dashboard: Loading data");
+      await loadTestimonials();
+      await loadNotifications();
+    };
+    
+    loadData();
+  }, [loadTestimonials, loadNotifications]);
+  
+  console.log("Current testimonials in Dashboard:", testimonials); // Debug log
   
   const publishedTestimonials = testimonials.filter(t => t.published);
   

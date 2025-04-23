@@ -14,11 +14,12 @@ interface TestimonialContextType {
   deleteTestimonial: (id: string) => Promise<void>;
   loading: boolean;
   error: string | null;
+  loadTestimonials: () => Promise<void>;
+  loadNotifications: () => Promise<void>;
 }
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
-// This is a temporary implementation until we connect to a backend
 export const TestimonialProvider = ({ children }: { children: React.ReactNode }) => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [notifications, setNotifications] = useState<SMSNotification[]>([]);
@@ -60,24 +61,51 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     },
   ]);
 
+  // Function to load testimonials from localStorage
+  const loadTestimonials = async () => {
+    try {
+      console.log("Loading testimonials from storage");
+      const storedTestimonials = localStorage.getItem("testimonials");
+      if (storedTestimonials) {
+        const parsedTestimonials = JSON.parse(storedTestimonials);
+        console.log("Parsed testimonials:", parsedTestimonials);
+        setTestimonials(parsedTestimonials);
+      } else {
+        console.log("No stored testimonials found");
+      }
+      return Promise.resolve();
+    } catch (err) {
+      console.error("Error loading testimonials:", err);
+      setError("Failed to load testimonials");
+      return Promise.reject(err);
+    }
+  };
+
+  // Function to load notifications from localStorage
+  const loadNotifications = async () => {
+    try {
+      const storedNotifications = localStorage.getItem("smsNotifications");
+      if (storedNotifications) {
+        setNotifications(JSON.parse(storedNotifications));
+      }
+      return Promise.resolve();
+    } catch (err) {
+      console.error("Error loading notifications:", err);
+      setError("Failed to load notifications");
+      return Promise.reject(err);
+    }
+  };
+
   // Load data from localStorage on first render
   useEffect(() => {
-    const loadData = () => {
+    const loadData = async () => {
+      setLoading(true);
       try {
-        const storedTestimonials = localStorage.getItem("testimonials");
-        if (storedTestimonials) {
-          setTestimonials(JSON.parse(storedTestimonials));
-        }
-        
-        const storedNotifications = localStorage.getItem("smsNotifications");
-        if (storedNotifications) {
-          setNotifications(JSON.parse(storedNotifications));
-        }
-        
-        setLoading(false);
+        await loadTestimonials();
+        await loadNotifications();
       } catch (err) {
-        console.error("Error loading data:", err);
-        setError("Failed to load data");
+        console.error("Error in loadData:", err);
+      } finally {
         setLoading(false);
       }
     };
@@ -85,15 +113,18 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     loadData();
   }, []);
 
-  // Save data to localStorage whenever it changes
+  // Save testimonials to localStorage whenever they change
   useEffect(() => {
     if (testimonials.length > 0) {
+      console.log("Saving testimonials to storage:", testimonials);
       localStorage.setItem("testimonials", JSON.stringify(testimonials));
     }
   }, [testimonials]);
   
+  // Save notifications to localStorage whenever they change
   useEffect(() => {
     if (notifications.length > 0) {
+      console.log("Saving notifications to storage:", notifications);
       localStorage.setItem("smsNotifications", JSON.stringify(notifications));
     }
   }, [notifications]);
@@ -110,7 +141,12 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
         published: false,
       };
       
-      setTestimonials(prev => [...prev, newTestimonial]);
+      // Update state with the new testimonial
+      setTestimonials(prev => {
+        const updated = [...prev, newTestimonial];
+        console.log("Updated testimonials:", updated);
+        return updated;
+      });
       
       toast({
         title: "Success!",
@@ -148,7 +184,11 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
       };
       
       // Update state with the new notification
-      setNotifications(prevNotifications => [...prevNotifications, newNotification]);
+      setNotifications(prevNotifications => {
+        const updated = [...prevNotifications, newNotification];
+        console.log("Updated notifications:", updated);
+        return updated;
+      });
       
       // Show success toast
       toast({
@@ -222,6 +262,8 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
         deleteTestimonial,
         loading,
         error,
+        loadTestimonials,
+        loadNotifications,
       }}
     >
       {children}

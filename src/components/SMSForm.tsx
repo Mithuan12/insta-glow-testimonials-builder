@@ -28,7 +28,7 @@ const formSchema = z.object({
 });
 
 const SMSForm = () => {
-  const { addSMSNotification } = useTestimonials();
+  const { addSMSNotification, loadNotifications } = useTestimonials();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -67,7 +67,15 @@ const SMSForm = () => {
         customerPhone: formattedPhone,
       });
       
+      // After adding a notification, reload the notifications list
+      await loadNotifications();
+      
       form.reset();
+      
+      toast({
+        title: "Success",
+        description: `SMS sent to ${values.customerName} at ${formattedPhone}`,
+      });
     } catch (error) {
       console.error("Error sending SMS notification:", error);
       toast({
