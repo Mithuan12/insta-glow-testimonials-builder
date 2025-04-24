@@ -66,9 +66,22 @@ export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => {
     const loadedTestimonials = loadTestimonialsFromStorage();
     const loadedNotifications = loadNotificationsFromStorage();
-    setTestimonials(loadedTestimonials);
-    setNotifications(loadedNotifications);
+    if (loadedTestimonials.length > 0) {
+      setTestimonials(loadedTestimonials);
+    }
+    if (loadedNotifications.length > 0) {
+      setNotifications(loadedNotifications);
+    }
   }, []);
+
+  // Save to storage whenever data changes
+  useEffect(() => {
+    saveTestimonialsToStorage(testimonials);
+  }, [testimonials]);
+
+  useEffect(() => {
+    saveNotificationsToStorage(notifications);
+  }, [notifications]);
 
   const value = {
     testimonials,
