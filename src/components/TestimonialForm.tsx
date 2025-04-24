@@ -3,30 +3,16 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import MediaTypeSelector from "./testimonial-form/MediaTypeSelector";
-import RatingStars from "./testimonial-form/RatingStars";
-import { testimonialFormSchema, type TestimonialFormData } from "./testimonial-form/testimonialFormSchema";
-import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useTestimonials } from "@/context/TestimonialContext";
+import { testimonialFormSchema, type TestimonialFormData } from "./testimonial-form/testimonialFormSchema";
+import { Form } from "@/components/ui/form";
+import { supabase } from "@/integrations/supabase/client";
+import FormFields from "./testimonial-form/FormFields";
 
-type TestimonialFormProps = {
-  onSuccess?: () => void;
-};
-
-const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
+const TestimonialForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
   const { addTestimonial } = useTestimonials();
   const { toast } = useToast();
   const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
@@ -44,24 +30,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     },
   });
 
-  const handleFileSelect = (file: File) => {
-    if (file.size > 50 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: "Please upload a file smaller than 50MB.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setMediaBlob(file);
-    toast({
-      title: "File Selected",
-      description: `${file.type.startsWith('audio/') ? 'Audio' : 'Video'} file has been selected.`,
-    });
-  };
-
-  const onSubmit = async (values: TestimonialFormData) => {
+  const handleFormSubmit = async (values: TestimonialFormData) => {
     try {
       setIsSubmitting(true);
       console.log("Submitting testimonial form:", values);
@@ -86,7 +55,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
         }
       }
       
-      const testimonialData = {
+      await addTestimonial({
         customerName: values.customerName,
         customerPhone: values.customerPhone,
         customerEmail: values.customerEmail || undefined,
@@ -94,11 +63,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
         rating: values.rating,
         mediaType: values.mediaType,
         mediaUrl,
-      };
-      
-      console.log("Sending testimonial data to context:", testimonialData);
-      
-      await addTestimonial(testimonialData);
+      });
       
       form.reset();
       setMediaBlob(null);
@@ -131,83 +96,11 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <MediaTypeSelector form={form} onFileSelect={handleFileSelect} />
-
-            {mediaBlob && (
-              <FormItem>
-                <FormLabel>Selected Media File</FormLabel>
-                <FormControl>
-                  <div className="p-4 border rounded-md bg-muted">
-                    <p className="text-sm text-muted-foreground">
-                      File selected: {(mediaBlob as File).name}
-                    </p>
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-
-            <FormField
-              control={form.control}
-              name="customerName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="customerPhone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="+1234567890" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="customerEmail"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email (Optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="john@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <RatingStars form={form} />
-            
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Your Testimonial</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Share your experience with our product or service..."
-                      className="min-h-[100px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+            <FormFields 
+              form={form}
+              mediaBlob={mediaBlob}
+              setMediaBlob={setMediaBlob}
             />
             <Button 
               type="submit" 
