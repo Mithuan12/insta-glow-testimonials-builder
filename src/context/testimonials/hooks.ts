@@ -1,46 +1,39 @@
 
-import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { Testimonial, SMSNotification } from "@/types";
-import { saveTestimonialsToStorage, saveNotificationsToStorage } from "./storage";
 
 export const useTestimonialActions = (
   setTestimonials: React.Dispatch<React.SetStateAction<Testimonial[]>>,
   setNotifications: React.Dispatch<React.SetStateAction<SMSNotification[]>>
-) => {
-  const addTestimonial = async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
-    console.log("Adding new testimonial:", testimonial);
-    const newTestimonial: Testimonial = {
+) => ({
+  addTestimonial: async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
+    const newTestimonial = {
       ...testimonial,
       id: uuidv4(),
       createdAt: new Date().toISOString(),
-      published: false,
+      published: false
     };
     
-    const stored = JSON.parse(localStorage.getItem("testimonials") || "[]");
-    const updated = [...stored, newTestimonial];
-    localStorage.setItem("testimonials", JSON.stringify(updated));
-    setTestimonials(updated);
-  };
+    setTestimonials(prev => {
+      const updated = [...prev, newTestimonial];
+      localStorage.setItem("testimonials", JSON.stringify(updated));
+      return updated;
+    });
+  },
 
-  const addSMSNotification = async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
-    const newNotification: SMSNotification = {
+  addSMSNotification: async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
+    const newNotification = {
       ...notification,
       id: uuidv4(),
       createdAt: new Date().toISOString(),
       formUrl: `${window.location.origin}/form/${uuidv4()}`,
-      status: "sent",
+      status: "sent"
     };
     
     setNotifications(prev => {
       const updated = [...prev, newNotification];
-      saveNotificationsToStorage(updated);
+      localStorage.setItem("smsNotifications", JSON.stringify(updated));
       return updated;
     });
-  };
-
-  return {
-    addTestimonial,
-    addSMSNotification,
-  };
-};
+  }
+});

@@ -1,12 +1,9 @@
-
 import { Testimonial, SMSNotification } from "@/types";
 
-export const loadTestimonialsFromStorage = (): Testimonial[] => {
+export const loadTestimonialsFromStorage = () => {
   try {
-    const stored = localStorage.getItem("testimonials");
-    return stored ? JSON.parse(stored) : [];
-  } catch (err) {
-    console.error("Error loading testimonials:", err);
+    return JSON.parse(localStorage.getItem("testimonials") || "[]");
+  } catch {
     return [];
   }
 };
@@ -19,12 +16,10 @@ export const saveTestimonialsToStorage = (testimonials: Testimonial[]): void => 
   }
 };
 
-export const loadNotificationsFromStorage = (): SMSNotification[] => {
+export const loadNotificationsFromStorage = () => {
   try {
-    const stored = localStorage.getItem("smsNotifications");
-    return stored ? JSON.parse(stored) : [];
-  } catch (err) {
-    console.error("Error loading notifications:", err);
+    return JSON.parse(localStorage.getItem("smsNotifications") || "[]");
+  } catch {
     return [];
   }
 };

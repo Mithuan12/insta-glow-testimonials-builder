@@ -1,78 +1,42 @@
-
-import React, { createContext, useState, useContext, useCallback, useEffect } from "react";
-import { Testimonial, SMSNotification } from "@/types";
+import React, { createContext, useContext, useState, useCallback } from "react";
 import { TestimonialContextType } from "./testimonials/types";
 import { defaultTemplates } from "./testimonials/templateData";
-import { 
-  loadTestimonialsFromStorage, 
-  saveTestimonialsToStorage, 
-  loadNotificationsFromStorage,
-  saveNotificationsToStorage
-} from "./testimonials/storage";
+import { loadTestimonialsFromStorage, loadNotificationsFromStorage } from "./testimonials/storage";
 import { useTestimonialActions } from "./testimonials/hooks";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
 export const TestimonialProvider = ({ children }: { children: React.ReactNode }) => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [notifications, setNotifications] = useState<SMSNotification[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
+  const [testimonials, setTestimonials] = useState(() => loadTestimonialsFromStorage());
+  const [notifications, setNotifications] = useState(() => loadNotificationsFromStorage());
   const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
 
-  useEffect(() => {
-    setTestimonials(loadTestimonialsFromStorage());
-    setNotifications(loadNotificationsFromStorage());
-  }, []);
-
-  const loadTestimonials = useCallback(() => {
-    const storedTestimonials = loadTestimonialsFromStorage();
-    setTestimonials(storedTestimonials);
-  }, []);
-
-  const loadNotifications = useCallback(async () => {
-    try {
-      const storedNotifications = loadNotificationsFromStorage();
-      setNotifications(storedNotifications);
-    } catch (err) {
-      console.error("Error loading notifications:", err);
-      setError("Failed to load notifications");
-    }
-  }, []);
-
-  const updateTestimonial = useCallback(async (id: string, update: Partial<Testimonial>) => {
+  const updateTestimonial = useCallback((id: string, update: Partial<Testimonial>) => {
     setTestimonials(prev => {
       const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
-      saveTestimonialsToStorage(updated);
+      localStorage.setItem("testimonials", JSON.stringify(updated));
       return updated;
     });
   }, []);
 
-  const deleteTestimonial = useCallback(async (id: string) => {
+  const deleteTestimonial = useCallback((id: string) => {
     setTestimonials(prev => {
       const updated = prev.filter(t => t.id !== id);
-      saveTestimonialsToStorage(updated);
+      localStorage.setItem("testimonials", JSON.stringify(updated));
       return updated;
     });
   }, []);
 
   return (
-    <TestimonialContext.Provider
-      value={{
-        testimonials,
-        templates: defaultTemplates,
-        notifications,
-        addTestimonial,
-        addSMSNotification,
-        updateTestimonial,
-        deleteTestimonial,
-        loading,
-        error,
-        loadTestimonials,
-        loadNotifications,
-      }}
-    >
+    <TestimonialContext.Provider value={{
+      testimonials,
+      templates: defaultTemplates,
+      notifications,
+      addTestimonial,
+      addSMSNotification,
+      updateTestimonial,
+      deleteTestimonial
+    }}>
       {children}
     </TestimonialContext.Provider>
   );
