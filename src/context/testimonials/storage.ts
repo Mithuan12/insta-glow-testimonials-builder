@@ -1,40 +1,38 @@
-import { Testimonial, SMSNotification } from "@/types";
 
-const TESTIMONIALS_KEY = 'testimonials_data';
-const NOTIFICATIONS_KEY = 'notifications_data';
+import { Testimonial, SMSNotification } from "@/types";
 
 export const loadTestimonialsFromStorage = (): Testimonial[] => {
   try {
-    const stored = localStorage.getItem(TESTIMONIALS_KEY);
+    const stored = localStorage.getItem("testimonials");
     return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Error loading testimonials:', error);
+  } catch (err) {
+    console.error("Error loading testimonials:", err);
     return [];
   }
 };
 
-export const saveTestimonialsToStorage = (testimonials: Testimonial[]) => {
+export const saveTestimonialsToStorage = (testimonials: Testimonial[]): void => {
   try {
-    localStorage.setItem(TESTIMONIALS_KEY, JSON.stringify(testimonials));
-  } catch (error) {
-    console.error('Error saving testimonials:', error);
+    localStorage.setItem("testimonials", JSON.stringify(testimonials));
+  } catch (err) {
+    console.error("Error saving testimonials:", err);
   }
 };
 
 export const loadNotificationsFromStorage = (): SMSNotification[] => {
   try {
-    const stored = localStorage.getItem(NOTIFICATIONS_KEY);
+    const stored = localStorage.getItem("smsNotifications");
     return stored ? JSON.parse(stored) : [];
-  } catch (error) {
-    console.error('Error loading notifications:', error);
+  } catch (err) {
+    console.error("Error loading notifications:", err);
     return [];
   }
 };
 
-export const saveNotificationsToStorage = (notifications: SMSNotification[]) => {
+export const saveNotificationsToStorage = (notifications: SMSNotification[]): void => {
   try {
-    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
-  } catch (error) {
-    console.error('Error saving notifications:', error);
+    localStorage.setItem("smsNotifications", JSON.stringify(notifications));
+  } catch (err) {
+    console.error("Error saving notifications:", err);
   }
 };

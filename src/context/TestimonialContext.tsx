@@ -1,62 +1,78 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { Testimonial, SMSNotification } from "@/types";
-import { loadTestimonialsFromStorage, saveTestimonialsToStorage, loadNotificationsFromStorage, saveNotificationsToStorage } from "./testimonials/storage";
 
-interface TestimonialContextType {
-  testimonials: Testimonial[];
-  notifications: SMSNotification[];
-  addTestimonial: (testimonial: Testimonial) => void;
-  removeTestimonial: (id: string) => void;
-  addNotification: (notification: SMSNotification) => void;
-  removeNotification: (id: string) => void;
-}
+import React, { createContext, useState, useContext, useCallback, useEffect } from "react";
+import { Testimonial, SMSNotification } from "@/types";
+import { TestimonialContextType } from "./testimonials/types";
+import { defaultTemplates } from "./testimonials/templateData";
+import { 
+  loadTestimonialsFromStorage, 
+  saveTestimonialsToStorage, 
+  loadNotificationsFromStorage,
+  saveNotificationsToStorage
+} from "./testimonials/storage";
+import { useTestimonialActions } from "./testimonials/hooks";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
-export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const TestimonialProvider = ({ children }: { children: React.ReactNode }) => {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [notifications, setNotifications] = useState<SMSNotification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
 
   useEffect(() => {
-    const loadedTestimonials = loadTestimonialsFromStorage();
-    const loadedNotifications = loadNotificationsFromStorage();
-    setTestimonials(loadedTestimonials);
-    setNotifications(loadedNotifications);
+    setTestimonials(loadTestimonialsFromStorage());
+    setNotifications(loadNotificationsFromStorage());
   }, []);
 
-  useEffect(() => {
-    saveTestimonialsToStorage(testimonials);
-  }, [testimonials]);
+  const loadTestimonials = useCallback(() => {
+    const storedTestimonials = loadTestimonialsFromStorage();
+    setTestimonials(storedTestimonials);
+  }, []);
 
-  useEffect(() => {
-    saveNotificationsToStorage(notifications);
-  }, [notifications]);
+  const loadNotifications = useCallback(async () => {
+    try {
+      const storedNotifications = loadNotificationsFromStorage();
+      setNotifications(storedNotifications);
+    } catch (err) {
+      console.error("Error loading notifications:", err);
+      setError("Failed to load notifications");
+    }
+  }, []);
 
-  const addTestimonial = (testimonial: Testimonial) => {
-    setTestimonials(prev => [...prev, testimonial]);
-  };
+  const updateTestimonial = useCallback(async (id: string, update: Partial<Testimonial>) => {
+    setTestimonials(prev => {
+      const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
+  }, []);
 
-  const removeTestimonial = (id: string) => {
-    setTestimonials(prev => prev.filter(t => t.id !== id));
-  };
-
-  const addNotification = (notification: SMSNotification) => {
-    setNotifications(prev => [...prev, notification]);
-  };
-
-  const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
+  const deleteTestimonial = useCallback(async (id: string) => {
+    setTestimonials(prev => {
+      const updated = prev.filter(t => t.id !== id);
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
+  }, []);
 
   return (
-    <TestimonialContext.Provider value={{
-      testimonials,
-      notifications,
-      addTestimonial,
-      removeTestimonial,
-      addNotification,
-      removeNotification
-    }}>
+    <TestimonialContext.Provider
+      value={{
+        testimonials,
+        templates: defaultTemplates,
+        notifications,
+        addTestimonial,
+        addSMSNotification,
+        updateTestimonial,
+        deleteTestimonial,
+        loading,
+        error,
+        loadTestimonials,
+        loadNotifications,
+      }}
+    >
       {children}
     </TestimonialContext.Provider>
   );
@@ -64,8 +80,6 @@ export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
 export const useTestimonials = () => {
   const context = useContext(TestimonialContext);
-  if (!context) {
-    throw new Error("useTestimonials must be used within a TestimonialProvider");
-  }
+  if (!context) throw new Error("useTestimonials must be used within TestimonialProvider");
   return context;
 };
