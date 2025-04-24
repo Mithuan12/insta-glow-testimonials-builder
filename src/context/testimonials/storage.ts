@@ -17,20 +17,23 @@ export const loadTestimonialsFromStorage = async (): Promise<Testimonial[]> => {
   }
 };
 
-export const saveTestimonialsToStorage = async (testimonials: Testimonial[]): Promise<void> => {
+export const saveTestimonialsToStorage = async (testimonial: Testimonial): Promise<void> => {
   try {
     const { error } = await supabase
       .from('testimonials')
-      .upsert(
-        testimonials.map(t => ({
-          ...t,
-          created_at: t.createdAt
-        }))
-      );
+      .insert({
+        id: testimonial.id,
+        name: testimonial.name,
+        rating: testimonial.rating,
+        message: testimonial.message,
+        mediaUrl: testimonial.mediaUrl,
+        mediaType: testimonial.mediaType,
+        created_at: new Date().toISOString()
+      });
 
     if (error) throw error;
   } catch (err) {
-    console.error("Error saving testimonials:", err);
+    console.error("Error saving testimonial:", err);
   }
 };
 

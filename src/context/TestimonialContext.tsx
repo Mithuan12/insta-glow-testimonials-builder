@@ -21,7 +21,45 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
+  // Assumed implementation - needs to be defined elsewhere to work correctly.
+  const saveTestimonialsToStorage = async (testimonial: Testimonial) => {
+    try {
+      const { data, error } = await supabase
+        .from(supabaseTestimonialsTable)
+        .insert([testimonial]);
+      if (error) {
+        console.error("Error saving testimonial:", error);
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // Assumed implementation - needs to be defined elsewhere to work correctly.
+  const loadTestimonialsFromStorage = async () => {
+    try {
+      const { data, error } = await supabase
+        .from(supabaseTestimonialsTable)
+        .select('*');
+      if (error) {
+        console.error("Error loading testimonials:", error);
+        throw error;
+      }
+      return data || [];
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const { addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
+
+  const addTestimonial = useCallback(async (testimonial: Testimonial) => {
+    await saveTestimonialsToStorage(testimonial);
+    const updatedTestimonials = await loadTestimonialsFromStorage();
+    setTestimonials(updatedTestimonials);
+  }, []);
 
   useEffect(() => {
     const initializeData = async () => {
