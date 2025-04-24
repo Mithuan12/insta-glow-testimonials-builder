@@ -1,31 +1,60 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+
+import React, { createContext, useContext, useState } from "react";
 import { TestimonialContextType } from "./testimonials/types";
 import { defaultTemplates } from "./testimonials/templateData";
-import { loadTestimonialsFromStorage, loadNotificationsFromStorage } from "./testimonials/storage";
-import { useTestimonialActions } from "./testimonials/hooks";
+import { loadTestimonialsFromStorage, saveTestimonialsToStorage, loadNotificationsFromStorage, saveNotificationsToStorage } from "./testimonials/storage";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
 export const TestimonialProvider = ({ children }: { children: React.ReactNode }) => {
   const [testimonials, setTestimonials] = useState(() => loadTestimonialsFromStorage());
   const [notifications, setNotifications] = useState(() => loadNotificationsFromStorage());
-  const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
 
-  const updateTestimonial = useCallback((id: string, update: Partial<Testimonial>) => {
+  const addTestimonial = (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
+    const newTestimonial = {
+      ...testimonial,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      published: false,
+    };
+    
+    setTestimonials(prev => {
+      const updated = [...prev, newTestimonial];
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
+  };
+
+  const updateTestimonial = (id: string, update: Partial<Testimonial>) => {
     setTestimonials(prev => {
       const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
-      localStorage.setItem("testimonials", JSON.stringify(updated));
+      saveTestimonialsToStorage(updated);
       return updated;
     });
-  }, []);
+  };
 
-  const deleteTestimonial = useCallback((id: string) => {
+  const deleteTestimonial = (id: string) => {
     setTestimonials(prev => {
       const updated = prev.filter(t => t.id !== id);
-      localStorage.setItem("testimonials", JSON.stringify(updated));
+      saveTestimonialsToStorage(updated);
       return updated;
     });
-  }, []);
+  };
+
+  const addSMSNotification = (notification: Omit<SMSNotification, "id" | "createdAt" | "status">) => {
+    const newNotification = {
+      ...notification,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      status: "pending",
+    };
+
+    setNotifications(prev => {
+      const updated = [...prev, newNotification];
+      saveNotificationsToStorage(updated);
+      return updated;
+    });
+  };
 
   return (
     <TestimonialContext.Provider value={{

@@ -5,13 +5,6 @@ import TestimonialList from "@/components/TestimonialList";
 import { TestimonialProvider, useTestimonials } from "@/context/TestimonialContext";
 
 const TestimonialsContent = () => {
-  const { loadTestimonials } = useTestimonials();
-  
-  useEffect(() => {
-    // Load testimonials when the page mounts
-    loadTestimonials();
-  }, [loadTestimonials]);
-  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
