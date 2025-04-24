@@ -1,12 +1,19 @@
 
 import React, { createContext, useContext, useState } from "react";
 import { TestimonialContextType } from "./testimonials/types";
-import { defaultTemplates } from "./testimonials/templateData";
 import { loadTestimonialsFromStorage, saveTestimonialsToStorage, loadNotificationsFromStorage, saveNotificationsToStorage } from "./testimonials/storage";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
-export const TestimonialProvider = ({ children }: { children: React.ReactNode }) => {
+export const useTestimonials = () => {
+  const context = useContext(TestimonialContext);
+  if (!context) {
+    throw new Error("useTestimonials must be used within TestimonialProvider");
+  }
+  return context;
+};
+
+export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [testimonials, setTestimonials] = useState(() => loadTestimonialsFromStorage());
   const [notifications, setNotifications] = useState(() => loadNotificationsFromStorage());
 
@@ -56,23 +63,18 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     });
   };
 
+  const value = {
+    testimonials,
+    notifications,
+    addTestimonial,
+    updateTestimonial,
+    deleteTestimonial,
+    addSMSNotification,
+  };
+
   return (
-    <TestimonialContext.Provider value={{
-      testimonials,
-      templates: defaultTemplates,
-      notifications,
-      addTestimonial,
-      addSMSNotification,
-      updateTestimonial,
-      deleteTestimonial
-    }}>
+    <TestimonialContext.Provider value={value}>
       {children}
     </TestimonialContext.Provider>
   );
-};
-
-export const useTestimonials = () => {
-  const context = useContext(TestimonialContext);
-  if (!context) throw new Error("useTestimonials must be used within TestimonialProvider");
-  return context;
 };
