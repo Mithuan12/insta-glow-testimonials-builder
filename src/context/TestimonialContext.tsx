@@ -1,80 +1,29 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { TestimonialContextType, Testimonial, SMSNotification } from "./testimonials/types";
+import { Testimonial, SMSNotification } from "@/types";
 import { loadTestimonialsFromStorage, saveTestimonialsToStorage, loadNotificationsFromStorage, saveNotificationsToStorage } from "./testimonials/storage";
+
+interface TestimonialContextType {
+  testimonials: Testimonial[];
+  notifications: SMSNotification[];
+  addTestimonial: (testimonial: Testimonial) => void;
+  removeTestimonial: (id: string) => void;
+  addNotification: (notification: SMSNotification) => void;
+  removeNotification: (id: string) => void;
+}
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
-export const useTestimonials = () => {
-  const context = useContext(TestimonialContext);
-  if (!context) {
-    throw new Error("useTestimonials must be used within TestimonialProvider");
-  }
-  return context;
-};
-
 export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>(() => loadTestimonialsFromStorage());
-  const [notifications, setNotifications] = useState<SMSNotification[]>(() => loadNotificationsFromStorage());
-
-  const addTestimonial = (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
-    const newTestimonial = {
-      ...testimonial,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      published: false,
-    };
-    
-    setTestimonials(prev => {
-      const updated = [...prev, newTestimonial];
-      saveTestimonialsToStorage(updated);
-      return updated;
-    });
-  };
-
-  const updateTestimonial = (id: string, update: Partial<Testimonial>) => {
-    setTestimonials(prev => {
-      const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
-      saveTestimonialsToStorage(updated);
-      return updated;
-    });
-  };
-
-  const deleteTestimonial = (id: string) => {
-    setTestimonials(prev => {
-      const updated = prev.filter(t => t.id !== id);
-      saveTestimonialsToStorage(updated);
-      return updated;
-    });
-  };
-
-  const addSMSNotification = (notification: Omit<SMSNotification, "id" | "createdAt" | "status">) => {
-    const newNotification = {
-      ...notification,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      status: "pending",
-    };
-
-    setNotifications(prev => {
-      const updated = [...prev, newNotification];
-      saveNotificationsToStorage(updated);
-      return updated;
-    });
-  };
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [notifications, setNotifications] = useState<SMSNotification[]>([]);
 
   useEffect(() => {
     const loadedTestimonials = loadTestimonialsFromStorage();
     const loadedNotifications = loadNotificationsFromStorage();
-    if (loadedTestimonials.length > 0) {
-      setTestimonials(loadedTestimonials);
-    }
-    if (loadedNotifications.length > 0) {
-      setNotifications(loadedNotifications);
-    }
+    setTestimonials(loadedTestimonials);
+    setNotifications(loadedNotifications);
   }, []);
 
-  // Save to storage whenever data changes
   useEffect(() => {
     saveTestimonialsToStorage(testimonials);
   }, [testimonials]);
@@ -83,20 +32,40 @@ export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ c
     saveNotificationsToStorage(notifications);
   }, [notifications]);
 
-  const value = {
-    testimonials,
-    notifications,
-    addTestimonial,
-    updateTestimonial,
-    deleteTestimonial,
-    addSMSNotification
+  const addTestimonial = (testimonial: Testimonial) => {
+    setTestimonials(prev => [...prev, testimonial]);
+  };
+
+  const removeTestimonial = (id: string) => {
+    setTestimonials(prev => prev.filter(t => t.id !== id));
+  };
+
+  const addNotification = (notification: SMSNotification) => {
+    setNotifications(prev => [...prev, notification]);
+  };
+
+  const removeNotification = (id: string) => {
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   return (
-    <TestimonialContext.Provider value={value}>
+    <TestimonialContext.Provider value={{
+      testimonials,
+      notifications,
+      addTestimonial,
+      removeTestimonial,
+      addNotification,
+      removeNotification
+    }}>
       {children}
     </TestimonialContext.Provider>
   );
 };
 
-export default TestimonialProvider;
+export const useTestimonials = () => {
+  const context = useContext(TestimonialContext);
+  if (!context) {
+    throw new Error("useTestimonials must be used within a TestimonialProvider");
+  }
+  return context;
+};
