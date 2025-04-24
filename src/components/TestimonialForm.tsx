@@ -65,9 +65,6 @@ const TestimonialForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) =>
         mediaUrl,
       });
       
-      // Reload testimonials to ensure the UI updates
-      await loadTestimonials();
-      
       form.reset();
       setMediaBlob(null);
       

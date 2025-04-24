@@ -17,11 +17,10 @@ export const useTestimonialActions = (
       published: false,
     };
     
-    setTestimonials(prev => {
-      const updated = [...prev, newTestimonial];
-      saveTestimonialsToStorage(updated);
-      return updated;
-    });
+    const stored = JSON.parse(localStorage.getItem("testimonials") || "[]");
+    const updated = [...stored, newTestimonial];
+    localStorage.setItem("testimonials", JSON.stringify(updated));
+    setTestimonials(updated);
   };
 
   const addSMSNotification = async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
