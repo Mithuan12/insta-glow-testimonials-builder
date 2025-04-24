@@ -19,10 +19,9 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
-
   // Initialize testimonials and notifications on mount
   useEffect(() => {
+    console.log("TestimonialProvider mounted: Loading data");
     loadTestimonials();
     loadNotifications();
   }, []);
@@ -50,6 +49,49 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     }
   }, []);
 
+  const addTestimonial = useCallback(async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
+    const newTestimonial: Testimonial = {
+      ...testimonial,
+      id: `testimonial-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      published: false,
+    };
+    
+    // First load latest testimonials to avoid overwriting
+    const currentTestimonials = loadTestimonialsFromStorage();
+    
+    // Then add the new testimonial
+    const updatedTestimonials = [...currentTestimonials, newTestimonial];
+    
+    // Save to storage
+    saveTestimonialsToStorage(updatedTestimonials);
+    
+    // Update state
+    setTestimonials(updatedTestimonials);
+    
+    console.log("Testimonial added:", newTestimonial);
+    console.log("Updated testimonials:", updatedTestimonials);
+  }, []);
+
+  const addSMSNotification = useCallback(async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
+    const formId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    const formUrl = `${window.location.origin}/form/${formId}`;
+    
+    const newNotification: SMSNotification = {
+      ...notification,
+      id: `sms-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      status: 'sent',
+      formUrl,
+    };
+    
+    setNotifications(prev => {
+      const updated = [...prev, newNotification];
+      saveNotificationsToStorage(updated);
+      return updated;
+    });
+  }, []);
+
   const updateTestimonial = useCallback(async (id: string, update: Partial<Testimonial>) => {
     setTestimonials(prev => {
       const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
@@ -66,22 +108,22 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     });
   }, []);
 
+  const contextValue: TestimonialContextType = {
+    testimonials,
+    templates: defaultTemplates,
+    notifications,
+    addTestimonial,
+    addSMSNotification,
+    updateTestimonial,
+    deleteTestimonial,
+    loading,
+    error,
+    loadTestimonials,
+    loadNotifications,
+  };
+
   return (
-    <TestimonialContext.Provider
-      value={{
-        testimonials,
-        templates: defaultTemplates,
-        notifications,
-        addTestimonial,
-        addSMSNotification,
-        updateTestimonial,
-        deleteTestimonial,
-        loading,
-        error,
-        loadTestimonials,
-        loadNotifications,
-      }}
-    >
+    <TestimonialContext.Provider value={contextValue}>
       {children}
     </TestimonialContext.Provider>
   );
