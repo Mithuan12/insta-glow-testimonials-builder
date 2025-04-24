@@ -1,16 +1,15 @@
 
 import { useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { Testimonial, SMSNotification } from "@/types";
-import { saveTestimonialsToStorage, saveNotificationsToStorage } from "./storage";
+import { SMSNotification } from "@/types";
+import { saveNotificationsToStorage } from "./storage";
 
 export const useTestimonialActions = (
-  setTestimonials: React.Dispatch<React.SetStateAction<Testimonial[]>>,
   setNotifications: React.Dispatch<React.SetStateAction<SMSNotification[]>>,
 ) => {
   const { toast } = useToast();
 
-  const addSMSNotification = useCallback(async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
+  const addSMSNotification = useCallback((notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
     const formId = Date.now().toString(36) + Math.random().toString(36).substr(2);
     const formUrl = `${window.location.origin}/form/${formId}`;
     

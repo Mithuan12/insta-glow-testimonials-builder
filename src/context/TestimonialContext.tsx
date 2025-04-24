@@ -9,7 +9,6 @@ import {
   loadNotificationsFromStorage, 
   saveNotificationsToStorage
 } from "./testimonials/storage";
-import { useTestimonialActions } from "./testimonials/hooks";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
@@ -19,19 +18,12 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  // Initialize testimonials and notifications on mount
-  useEffect(() => {
-    console.log("TestimonialProvider mounted: Loading data");
-    loadTestimonials();
-    loadNotifications();
-  }, []);
-
-  const loadTestimonials = useCallback(async () => {
+  const loadTestimonials = useCallback(() => {
     try {
       setLoading(true);
-      const loadedTestimonials = loadTestimonialsFromStorage();
-      console.log("Loaded testimonials:", loadedTestimonials);
-      setTestimonials(loadedTestimonials);
+      const loaded = loadTestimonialsFromStorage();
+      console.log("Loaded testimonials:", loaded);
+      setTestimonials(loaded);
     } catch (err) {
       console.error("Error loading testimonials:", err);
       setError("Failed to load testimonials");
@@ -40,7 +32,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(() => {
     try {
       setNotifications(loadNotificationsFromStorage());
     } catch (err) {
@@ -49,7 +41,12 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  const addTestimonial = useCallback(async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
+  useEffect(() => {
+    loadTestimonials();
+    loadNotifications();
+  }, [loadTestimonials, loadNotifications]);
+
+  const addTestimonial = useCallback((testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
     const newTestimonial: Testimonial = {
       ...testimonial,
       id: `testimonial-${Date.now()}`,
@@ -57,23 +54,15 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
       published: false,
     };
     
-    // First load latest testimonials to avoid overwriting
-    const currentTestimonials = loadTestimonialsFromStorage();
-    
-    // Then add the new testimonial
-    const updatedTestimonials = [...currentTestimonials, newTestimonial];
-    
-    // Save to storage
-    saveTestimonialsToStorage(updatedTestimonials);
-    
-    // Update state
-    setTestimonials(updatedTestimonials);
-    
-    console.log("Testimonial added:", newTestimonial);
-    console.log("Updated testimonials:", updatedTestimonials);
+    setTestimonials(prev => {
+      const updated = [...prev, newTestimonial];
+      saveTestimonialsToStorage(updated);
+      console.log("Updated testimonials after add:", updated);
+      return updated;
+    });
   }, []);
 
-  const addSMSNotification = useCallback(async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
+  const addSMSNotification = useCallback((notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
     const formId = Date.now().toString(36) + Math.random().toString(36).substr(2);
     const formUrl = `${window.location.origin}/form/${formId}`;
     
@@ -92,7 +81,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     });
   }, []);
 
-  const updateTestimonial = useCallback(async (id: string, update: Partial<Testimonial>) => {
+  const updateTestimonial = useCallback((id: string, update: Partial<Testimonial>) => {
     setTestimonials(prev => {
       const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
       saveTestimonialsToStorage(updated);
@@ -100,7 +89,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     });
   }, []);
 
-  const deleteTestimonial = useCallback(async (id: string) => {
+  const deleteTestimonial = useCallback((id: string) => {
     setTestimonials(prev => {
       const updated = prev.filter(t => t.id !== id);
       saveTestimonialsToStorage(updated);

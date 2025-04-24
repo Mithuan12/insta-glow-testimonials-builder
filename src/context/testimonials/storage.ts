@@ -5,19 +5,17 @@ export const loadTestimonialsFromStorage = (): Testimonial[] => {
   try {
     const stored = localStorage.getItem("testimonials");
     console.log("Loading testimonials from storage:", stored);
-    if (stored) {
-      return JSON.parse(stored);
-    }
+    return stored ? JSON.parse(stored) : [];
   } catch (err) {
     console.error("Error loading testimonials from storage:", err);
+    return [];
   }
-  return [];
 };
 
 export const saveTestimonialsToStorage = (testimonials: Testimonial[]): void => {
   try {
-    console.log("Saving testimonials to storage:", testimonials);
     localStorage.setItem("testimonials", JSON.stringify(testimonials));
+    console.log("Saved testimonials to storage:", testimonials);
   } catch (err) {
     console.error("Error saving testimonials to storage:", err);
   }
@@ -26,13 +24,11 @@ export const saveTestimonialsToStorage = (testimonials: Testimonial[]): void => 
 export const loadNotificationsFromStorage = (): SMSNotification[] => {
   try {
     const stored = localStorage.getItem("smsNotifications");
-    if (stored) {
-      return JSON.parse(stored);
-    }
+    return stored ? JSON.parse(stored) : [];
   } catch (err) {
     console.error("Error loading notifications from storage:", err);
+    return [];
   }
-  return [];
 };
 
 export const saveNotificationsToStorage = (notifications: SMSNotification[]): void => {
