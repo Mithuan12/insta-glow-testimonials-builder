@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageSquare, Send, Image } from "lucide-react";
@@ -7,7 +7,12 @@ import NotificationList from "./NotificationList";
 import TestimonialDisplay from "./TestimonialDisplay";
 
 const Dashboard = () => {
-  const { testimonials, notifications } = useTestimonials();
+  const { testimonials, notifications, loadTestimonials } = useTestimonials();
+  
+  useEffect(() => {
+    loadTestimonials();
+    console.log("Dashboard: Loading testimonials");
+  }, [loadTestimonials]);
   
   console.log("Dashboard: Current testimonials:", testimonials);
   

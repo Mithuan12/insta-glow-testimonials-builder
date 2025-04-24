@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -86,7 +87,8 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
         mediaUrl,
       };
       
-      await addTestimonial(testimonialData);
+      console.log("Adding testimonial data:", testimonialData);
+      addTestimonial(testimonialData);
       
       form.reset();
       setMediaBlob(null);

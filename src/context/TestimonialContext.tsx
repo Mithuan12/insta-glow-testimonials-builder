@@ -22,7 +22,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     try {
       setLoading(true);
       const loaded = loadTestimonialsFromStorage();
-      console.log("Loaded testimonials:", loaded);
+      console.log("Loaded testimonials in context:", loaded);
       setTestimonials(loaded);
     } catch (err) {
       console.error("Error loading testimonials:", err);
@@ -56,8 +56,8 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     
     setTestimonials(prev => {
       const updated = [...prev, newTestimonial];
+      console.log("Adding testimonial:", newTestimonial);
       saveTestimonialsToStorage(updated);
-      console.log("Updated testimonials after add:", updated);
       return updated;
     });
   }, []);
