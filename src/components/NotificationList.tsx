@@ -1,22 +1,20 @@
-
 import React, { useEffect } from "react";
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Copy, RefreshCw } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 const NotificationList = () => {
   const { notifications, loadNotifications } = useTestimonials();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load notifications when component mounts
     loadNotifications();
   }, [loadNotifications]);
 
-  console.log("Current notifications in NotificationList:", notifications); // Debug log
+  console.log("Current notifications in NotificationList:", notifications);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -35,7 +33,7 @@ const NotificationList = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Recent SMS Notifications</h2>
+        <h2 className="text-xl font-bold">Recent WhatsApp Notifications</h2>
         <Button variant="ghost" size="sm" onClick={handleRefresh}>
           <RefreshCw className="h-4 w-4 mr-1" /> Refresh
         </Button>
@@ -44,7 +42,7 @@ const NotificationList = () => {
       {notifications.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
-            No SMS notifications sent yet.
+            No form links sent yet.
           </CardContent>
         </Card>
       ) : (
@@ -61,7 +59,7 @@ const NotificationList = () => {
             <CardContent>
               <div className="space-y-2">
                 <div className="text-sm">
-                  Phone: <span className="font-mono">{notification.customerPhone}</span>
+                  WhatsApp: <span className="font-mono">{notification.customerPhone}</span>
                 </div>
                 <div className="text-sm">
                   Status: 

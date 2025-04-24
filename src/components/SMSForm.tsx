@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/form";
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import { Send, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, WhatsApp } from "lucide-react";
 
 const formSchema = z.object({
   customerName: z.string().min(2, {
@@ -46,17 +46,16 @@ const SMSForm = () => {
     
     // Ensure it has at least 10 digits
     if (cleaned.length < 10) {
-      return cleaned; // Return as is, validation will catch this
+      return cleaned;
     }
     
-    // Add country code if missing (assuming US number)
+    // Add country code if missing (assuming international format)
     if (cleaned.length === 10) {
       return `+1${cleaned}`;
     } else if (cleaned.startsWith('1') && cleaned.length === 11) {
       return `+${cleaned}`;
     }
     
-    // If it already has a country code that's not 1, just add +
     return `+${cleaned}`;
   };
 
@@ -65,30 +64,39 @@ const SMSForm = () => {
       setIsSubmitting(true);
       const formattedPhone = formatPhoneNumber(values.customerPhone);
       
-      console.log("Sending SMS to:", {
+      console.log("Preparing WhatsApp message for:", {
         name: values.customerName,
         phone: formattedPhone
       });
       
-      await addSMSNotification({
+      const notificationData = {
         customerName: values.customerName,
         customerPhone: formattedPhone,
-      });
-      
-      // After adding a notification, reload the notifications list
+      };
+
+      // Add notification to track the request
+      await addSMSNotification(notificationData);
       await loadNotifications();
+      
+      // Generate WhatsApp message
+      const formUrl = `${window.location.origin}/form/${Date.now().toString(36)}`;
+      const message = `Hello ${values.customerName}! Thank you for choosing our services. Please share your testimonial using this link: ${formUrl}`;
+      const whatsappUrl = `https://wa.me/${formattedPhone.replace('+', '')}?text=${encodeURIComponent(message)}`;
+      
+      // Open WhatsApp in a new tab
+      window.open(whatsappUrl, '_blank');
       
       form.reset();
       
       toast({
         title: "Success",
-        description: `SMS sent to ${values.customerName} at ${formattedPhone}`,
+        description: "WhatsApp message prepared with testimonial form link",
       });
     } catch (error) {
-      console.error("Error sending SMS notification:", error);
+      console.error("Error preparing WhatsApp message:", error);
       toast({
         title: "Error",
-        description: "Failed to send SMS notification. Please try again.",
+        description: "Failed to prepare WhatsApp message. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -101,7 +109,7 @@ const SMSForm = () => {
       <CardHeader>
         <CardTitle>Send Testimonial Form</CardTitle>
         <CardDescription>
-          Send an SMS with a link to your testimonial form.
+          Send the testimonial form link via WhatsApp to your customer.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -125,9 +133,9 @@ const SMSForm = () => {
               name="customerPhone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel>WhatsApp Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter phone number (e.g. +1234567890)" {...field} />
+                    <Input placeholder="Enter WhatsApp number with country code (e.g. +1234567890)" {...field} />
                   </FormControl>
                   <FormMessage />
                   <p className="text-xs text-muted-foreground">
@@ -144,12 +152,12 @@ const SMSForm = () => {
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
+                  Preparing...
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Form Link
+                  <WhatsApp className="mr-2 h-4 w-4" />
+                  Send via WhatsApp
                 </>
               )}
             </Button>
@@ -157,7 +165,7 @@ const SMSForm = () => {
         </Form>
       </CardContent>
       <CardFooter className="flex justify-center text-sm text-muted-foreground">
-        SMS will contain a link to your custom testimonial form
+        Message will include a link to your custom testimonial form
       </CardFooter>
     </Card>
   );
