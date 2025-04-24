@@ -3,44 +3,36 @@ import { Testimonial, SMSNotification } from "@/types";
 
 export const loadTestimonialsFromStorage = (): Testimonial[] => {
   try {
-    console.log("Loading testimonials from storage");
     const stored = localStorage.getItem("testimonials");
-    if (stored) {
-      const parsedData = JSON.parse(stored);
-      console.log("Loaded testimonials:", parsedData);
-      return parsedData;
-    }
+    return stored ? JSON.parse(stored) : [];
   } catch (err) {
-    console.error("Error loading testimonials from storage:", err);
+    console.error("Error loading testimonials:", err);
+    return [];
   }
-  return [];
 };
 
 export const saveTestimonialsToStorage = (testimonials: Testimonial[]): void => {
   try {
-    console.log("Saving testimonials to storage:", testimonials);
     localStorage.setItem("testimonials", JSON.stringify(testimonials));
   } catch (err) {
-    console.error("Error saving testimonials to storage:", err);
+    console.error("Error saving testimonials:", err);
   }
 };
 
 export const loadNotificationsFromStorage = (): SMSNotification[] => {
   try {
     const stored = localStorage.getItem("smsNotifications");
-    if (stored) {
-      return JSON.parse(stored);
-    }
+    return stored ? JSON.parse(stored) : [];
   } catch (err) {
-    console.error("Error loading notifications from storage:", err);
+    console.error("Error loading notifications:", err);
+    return [];
   }
-  return [];
 };
 
 export const saveNotificationsToStorage = (notifications: SMSNotification[]): void => {
   try {
     localStorage.setItem("smsNotifications", JSON.stringify(notifications));
   } catch (err) {
-    console.error("Error saving notifications to storage:", err);
+    console.error("Error saving notifications:", err);
   }
 };

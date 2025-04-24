@@ -21,32 +21,14 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   
   const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
 
-  // Load testimonials on mount
   useEffect(() => {
-    const initialLoad = async () => {
-      try {
-        await loadTestimonials();
-        await loadNotifications();
-      } catch (error) {
-        console.error("Error during initial data load:", error);
-      }
-    };
-    
-    initialLoad();
+    setTestimonials(loadTestimonialsFromStorage());
+    setNotifications(loadNotificationsFromStorage());
   }, []);
 
-  const loadTestimonials = useCallback(async () => {
-    try {
-      setLoading(true);
-      const storedTestimonials = loadTestimonialsFromStorage();
-      console.log("Loaded testimonials in context:", storedTestimonials);
-      setTestimonials(storedTestimonials);
-    } catch (err) {
-      console.error("Error loading testimonials:", err);
-      setError("Failed to load testimonials");
-    } finally {
-      setLoading(false);
-    }
+  const loadTestimonials = useCallback(() => {
+    const storedTestimonials = loadTestimonialsFromStorage();
+    setTestimonials(storedTestimonials);
   }, []);
 
   const loadNotifications = useCallback(async () => {
