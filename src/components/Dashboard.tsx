@@ -7,14 +7,20 @@ import NotificationList from "./NotificationList";
 import TestimonialDisplay from "./TestimonialDisplay";
 
 const Dashboard = () => {
-  const { testimonials, notifications, loadTestimonials } = useTestimonials();
+  const { testimonials, notifications, loadTestimonials, loadNotifications } = useTestimonials();
   
   useEffect(() => {
-    loadTestimonials();
-    console.log("Dashboard: Loading testimonials");
-  }, [loadTestimonials]);
+    // Ensure testimonials and notifications are loaded when dashboard mounts
+    const loadData = async () => {
+      console.log("Dashboard: Loading data");
+      await loadTestimonials();
+      await loadNotifications();
+    };
+    
+    loadData();
+  }, [loadTestimonials, loadNotifications]);
   
-  console.log("Dashboard: Current testimonials:", testimonials);
+  console.log("Current testimonials in Dashboard:", testimonials); // Debug log
   
   const publishedTestimonials = testimonials.filter(t => t.published);
   

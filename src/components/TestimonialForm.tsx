@@ -5,7 +5,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +27,7 @@ type TestimonialFormProps = {
 };
 
 const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
-  const { addTestimonial } = useTestimonials();
+  const { addTestimonial, loadTestimonials } = useTestimonials();
   const { toast } = useToast();
   const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +45,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   });
 
   const handleFileSelect = (file: File) => {
+    // Validate file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "File Too Large",
@@ -46,6 +54,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       });
       return;
     }
+
     setMediaBlob(file);
     toast({
       title: "File Selected",
@@ -73,6 +82,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
         }
         
         if (data) {
+          console.log("File uploaded successfully:", data);
           mediaUrl = data.path;
         }
       }
@@ -87,9 +97,14 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
         mediaUrl,
       };
       
-      console.log("Adding testimonial data:", testimonialData);
-      addTestimonial(testimonialData);
+      console.log("Sending testimonial data to context:", testimonialData);
       
+      await addTestimonial(testimonialData);
+      
+      // After adding a testimonial, reload the testimonials list
+      console.log("Reloading testimonials after submission");
+      await loadTestimonials();
+
       form.reset();
       setMediaBlob(null);
       

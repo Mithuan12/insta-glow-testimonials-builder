@@ -1,14 +1,10 @@
 
-import React, { createContext, useState, useContext, useCallback, useEffect } from "react";
+import React, { createContext, useState, useContext, useCallback } from "react";
 import { Testimonial, SMSNotification } from "@/types";
 import { TestimonialContextType } from "./testimonials/types";
 import { defaultTemplates } from "./testimonials/templateData";
-import { 
-  loadTestimonialsFromStorage, 
-  saveTestimonialsToStorage, 
-  loadNotificationsFromStorage, 
-  saveNotificationsToStorage
-} from "./testimonials/storage";
+import { loadTestimonialsFromStorage, loadNotificationsFromStorage } from "./testimonials/storage";
+import { useTestimonialActions } from "./testimonials/hooks";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
@@ -18,12 +14,12 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
-  const loadTestimonials = useCallback(() => {
+  const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
+
+  const loadTestimonials = useCallback(async () => {
     try {
       setLoading(true);
-      const loaded = loadTestimonialsFromStorage();
-      console.log("Loaded testimonials in context:", loaded);
-      setTestimonials(loaded);
+      setTestimonials(loadTestimonialsFromStorage());
     } catch (err) {
       console.error("Error loading testimonials:", err);
       setError("Failed to load testimonials");
@@ -32,7 +28,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  const loadNotifications = useCallback(() => {
+  const loadNotifications = useCallback(async () => {
     try {
       setNotifications(loadNotificationsFromStorage());
     } catch (err) {
@@ -41,78 +37,30 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  useEffect(() => {
-    loadTestimonials();
-    loadNotifications();
-  }, [loadTestimonials, loadNotifications]);
-
-  const addTestimonial = useCallback((testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
-    const newTestimonial: Testimonial = {
-      ...testimonial,
-      id: `testimonial-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      published: false,
-    };
-    
-    setTestimonials(prev => {
-      const updated = [...prev, newTestimonial];
-      console.log("Adding testimonial:", newTestimonial);
-      saveTestimonialsToStorage(updated);
-      return updated;
-    });
+  const updateTestimonial = useCallback(async (id: string, update: Partial<Testimonial>) => {
+    setTestimonials(prev => prev.map(t => t.id === id ? { ...t, ...update } : t));
   }, []);
 
-  const addSMSNotification = useCallback((notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
-    const formId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    const formUrl = `${window.location.origin}/form/${formId}`;
-    
-    const newNotification: SMSNotification = {
-      ...notification,
-      id: `sms-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      status: 'sent',
-      formUrl,
-    };
-    
-    setNotifications(prev => {
-      const updated = [...prev, newNotification];
-      saveNotificationsToStorage(updated);
-      return updated;
-    });
+  const deleteTestimonial = useCallback(async (id: string) => {
+    setTestimonials(prev => prev.filter(t => t.id !== id));
   }, []);
-
-  const updateTestimonial = useCallback((id: string, update: Partial<Testimonial>) => {
-    setTestimonials(prev => {
-      const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
-      saveTestimonialsToStorage(updated);
-      return updated;
-    });
-  }, []);
-
-  const deleteTestimonial = useCallback((id: string) => {
-    setTestimonials(prev => {
-      const updated = prev.filter(t => t.id !== id);
-      saveTestimonialsToStorage(updated);
-      return updated;
-    });
-  }, []);
-
-  const contextValue: TestimonialContextType = {
-    testimonials,
-    templates: defaultTemplates,
-    notifications,
-    addTestimonial,
-    addSMSNotification,
-    updateTestimonial,
-    deleteTestimonial,
-    loading,
-    error,
-    loadTestimonials,
-    loadNotifications,
-  };
 
   return (
-    <TestimonialContext.Provider value={contextValue}>
+    <TestimonialContext.Provider
+      value={{
+        testimonials,
+        templates: defaultTemplates,
+        notifications,
+        addTestimonial,
+        addSMSNotification,
+        updateTestimonial,
+        deleteTestimonial,
+        loading,
+        error,
+        loadTestimonials,
+        loadNotifications,
+      }}
+    >
       {children}
     </TestimonialContext.Provider>
   );

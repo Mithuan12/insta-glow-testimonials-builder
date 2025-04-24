@@ -1,25 +1,21 @@
 
 import { Testimonial, SMSNotification } from "@/types";
 
-const TESTIMONIALS_STORAGE_KEY = "testimonials";
-const SMS_NOTIFICATIONS_STORAGE_KEY = "smsNotifications";
-
 export const loadTestimonialsFromStorage = (): Testimonial[] => {
   try {
-    const stored = localStorage.getItem(TESTIMONIALS_STORAGE_KEY);
-    const data = stored ? JSON.parse(stored) : [];
-    console.log("Loading testimonials from storage:", data);
-    return data;
+    const stored = localStorage.getItem("testimonials");
+    if (stored) {
+      return JSON.parse(stored);
+    }
   } catch (err) {
     console.error("Error loading testimonials from storage:", err);
-    return [];
   }
+  return [];
 };
 
 export const saveTestimonialsToStorage = (testimonials: Testimonial[]): void => {
   try {
-    localStorage.setItem(TESTIMONIALS_STORAGE_KEY, JSON.stringify(testimonials));
-    console.log("Saved testimonials to storage. Count:", testimonials.length);
+    localStorage.setItem("testimonials", JSON.stringify(testimonials));
   } catch (err) {
     console.error("Error saving testimonials to storage:", err);
   }
@@ -27,18 +23,19 @@ export const saveTestimonialsToStorage = (testimonials: Testimonial[]): void => 
 
 export const loadNotificationsFromStorage = (): SMSNotification[] => {
   try {
-    const stored = localStorage.getItem(SMS_NOTIFICATIONS_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
+    const stored = localStorage.getItem("smsNotifications");
+    if (stored) {
+      return JSON.parse(stored);
+    }
   } catch (err) {
     console.error("Error loading notifications from storage:", err);
-    return [];
   }
+  return [];
 };
 
 export const saveNotificationsToStorage = (notifications: SMSNotification[]): void => {
   try {
-    localStorage.setItem(SMS_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(notifications));
-    console.log("Saved notifications to storage. Count:", notifications.length);
+    localStorage.setItem("smsNotifications", JSON.stringify(notifications));
   } catch (err) {
     console.error("Error saving notifications to storage:", err);
   }
