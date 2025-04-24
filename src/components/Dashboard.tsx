@@ -20,7 +20,7 @@ const Dashboard = () => {
     loadData();
   }, [loadTestimonials, loadNotifications]);
   
-  console.log("Current testimonials in Dashboard:", testimonials); // Debug log
+  console.log("Dashboard: Current testimonials:", testimonials); // Enhanced debug log
   
   const publishedTestimonials = testimonials.filter(t => t.published);
   

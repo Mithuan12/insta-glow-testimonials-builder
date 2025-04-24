@@ -1,5 +1,5 @@
 
-import React, { createContext, useState, useContext, useCallback } from "react";
+import React, { createContext, useState, useContext, useCallback, useEffect } from "react";
 import { Testimonial, SMSNotification } from "@/types";
 import { TestimonialContextType } from "./testimonials/types";
 import { defaultTemplates } from "./testimonials/templateData";
@@ -16,10 +16,18 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   
   const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
 
+  // Initialize testimonials and notifications on mount
+  useEffect(() => {
+    loadTestimonials();
+    loadNotifications();
+  }, []);
+
   const loadTestimonials = useCallback(async () => {
     try {
       setLoading(true);
-      setTestimonials(loadTestimonialsFromStorage());
+      const loadedTestimonials = loadTestimonialsFromStorage();
+      console.log("Loaded testimonials:", loadedTestimonials);
+      setTestimonials(loadedTestimonials);
     } catch (err) {
       console.error("Error loading testimonials:", err);
       setError("Failed to load testimonials");
@@ -38,11 +46,19 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   }, []);
 
   const updateTestimonial = useCallback(async (id: string, update: Partial<Testimonial>) => {
-    setTestimonials(prev => prev.map(t => t.id === id ? { ...t, ...update } : t));
+    setTestimonials(prev => {
+      const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
   }, []);
 
   const deleteTestimonial = useCallback(async (id: string) => {
-    setTestimonials(prev => prev.filter(t => t.id !== id));
+    setTestimonials(prev => {
+      const updated = prev.filter(t => t.id !== id);
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
   }, []);
 
   return (

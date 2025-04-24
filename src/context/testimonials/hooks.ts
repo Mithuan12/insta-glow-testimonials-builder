@@ -2,7 +2,7 @@
 import { useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { Testimonial, SMSNotification } from "@/types";
-import { saveTestimonialsToStorage, saveNotificationsToStorage } from "./storage";
+import { saveTestimonialsToStorage, saveNotificationsToStorage, loadTestimonialsFromStorage } from "./storage";
 
 export const useTestimonialActions = (
   setTestimonials: React.Dispatch<React.SetStateAction<Testimonial[]>>,
@@ -18,11 +18,20 @@ export const useTestimonialActions = (
       published: false,
     };
     
-    setTestimonials(prev => {
-      const updated = [...prev, newTestimonial];
-      saveTestimonialsToStorage(updated);
-      return updated;
-    });
+    // First load latest testimonials to avoid overwriting
+    const currentTestimonials = loadTestimonialsFromStorage();
+    
+    // Then add the new testimonial
+    const updatedTestimonials = [...currentTestimonials, newTestimonial];
+    
+    // Save to storage
+    saveTestimonialsToStorage(updatedTestimonials);
+    
+    // Update state
+    setTestimonials(updatedTestimonials);
+    
+    console.log("Testimonial added:", newTestimonial);
+    console.log("Updated testimonials:", updatedTestimonials);
     
     toast({ title: "Success!", description: "Testimonial submitted successfully." });
   }, [setTestimonials, toast]);
