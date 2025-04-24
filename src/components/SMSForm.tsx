@@ -44,12 +44,20 @@ const SMSForm = () => {
     // Strip any non-numeric characters
     const cleaned = phone.replace(/\D/g, '');
     
-    // Ensure it starts with country code if missing
-    if (!cleaned.startsWith('1') && cleaned.length === 10) {
-      return `1${cleaned}`;
+    // Ensure it has at least 10 digits
+    if (cleaned.length < 10) {
+      return cleaned; // Return as is, validation will catch this
     }
     
-    return cleaned;
+    // Add country code if missing (assuming US number)
+    if (cleaned.length === 10) {
+      return `+1${cleaned}`;
+    } else if (cleaned.startsWith('1') && cleaned.length === 11) {
+      return `+${cleaned}`;
+    }
+    
+    // If it already has a country code that's not 1, just add +
+    return `+${cleaned}`;
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
@@ -119,9 +127,12 @@ const SMSForm = () => {
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1234567890" {...field} />
+                    <Input placeholder="Enter phone number (e.g. +1234567890)" {...field} />
                   </FormControl>
                   <FormMessage />
+                  <p className="text-xs text-muted-foreground">
+                    Format: Include country code (e.g., +1 for US)
+                  </p>
                 </FormItem>
               )}
             />

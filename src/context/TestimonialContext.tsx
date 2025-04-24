@@ -84,9 +84,15 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   // Function to load notifications from localStorage
   const loadNotifications = async () => {
     try {
+      console.log("Loading SMS notifications from storage");
       const storedNotifications = localStorage.getItem("smsNotifications");
       if (storedNotifications) {
-        setNotifications(JSON.parse(storedNotifications));
+        const parsedNotifications = JSON.parse(storedNotifications);
+        console.log("Parsed notifications:", parsedNotifications);
+        setNotifications(parsedNotifications);
+      } else {
+        console.log("No stored SMS notifications found");
+        setNotifications([]);
       }
       return Promise.resolve();
     } catch (err) {
@@ -123,10 +129,8 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   
   // Save notifications to localStorage whenever they change
   useEffect(() => {
-    if (notifications.length > 0) {
-      console.log("Saving notifications to storage:", notifications);
-      localStorage.setItem("smsNotifications", JSON.stringify(notifications));
-    }
+    console.log("Saving notifications to storage:", notifications);
+    localStorage.setItem("smsNotifications", JSON.stringify(notifications));
   }, [notifications]);
 
   const addTestimonial = async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
@@ -167,12 +171,24 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   
   const addSMSNotification = async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
     try {
+      // Log the input
+      console.log("Adding SMS notification with data:", notification);
+      
+      // Validate phone number
+      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+      let phoneNumber = notification.customerPhone;
+      
+      if (!phoneRegex.test(phoneNumber)) {
+        console.error("Invalid phone format:", phoneNumber);
+        throw new Error(`Invalid phone number format: ${phoneNumber}`);
+      }
+      
       // Generate unique, shareable form URL
       const formId = Date.now().toString(36) + Math.random().toString(36).substr(2);
       const formUrl = `${window.location.origin}/form/${formId}`;
       
       // Simulate SMS sending - in a real app, we would call a Twilio API or similar here
-      console.log(`Sending SMS to ${notification.customerPhone} with form URL: ${formUrl}`);
+      console.log(`Sending SMS to ${phoneNumber} with form URL: ${formUrl}`);
       
       // Create the new notification
       const newNotification: SMSNotification = {
@@ -182,6 +198,8 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
         status: 'sent', // In real implementation, this would be 'pending' initially
         formUrl,
       };
+      
+      console.log("Created new notification:", newNotification);
       
       // Update state with the new notification
       setNotifications(prevNotifications => {
@@ -201,7 +219,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
       console.error("Error sending SMS notification:", err);
       toast({
         title: "Error",
-        description: "Failed to send SMS notification",
+        description: `Failed to send SMS notification: ${err instanceof Error ? err.message : 'Unknown error'}`,
         variant: "destructive",
       });
       return Promise.reject(err);

@@ -4,7 +4,7 @@ import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Copy } from "lucide-react";
+import { Copy, RefreshCw } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const NotificationList = () => {
@@ -25,9 +25,22 @@ const NotificationList = () => {
     });
   };
 
+  const handleRefresh = () => {
+    loadNotifications();
+    toast({
+      description: "Notifications refreshed",
+    });
+  };
+
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Recent SMS Notifications</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Recent SMS Notifications</h2>
+        <Button variant="ghost" size="sm" onClick={handleRefresh}>
+          <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+        </Button>
+      </div>
+      
       {notifications.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center text-muted-foreground">
@@ -48,7 +61,7 @@ const NotificationList = () => {
             <CardContent>
               <div className="space-y-2">
                 <div className="text-sm">
-                  Phone: {notification.customerPhone}
+                  Phone: <span className="font-mono">{notification.customerPhone}</span>
                 </div>
                 <div className="text-sm">
                   Status: 
