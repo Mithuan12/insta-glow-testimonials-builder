@@ -22,16 +22,12 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
 
   useEffect(() => {
-    const initializeData = async () => {
-      const storedTestimonials = await loadTestimonialsFromStorage();
-      setTestimonials(Array.isArray(storedTestimonials) ? storedTestimonials : []);
-      setNotifications(loadNotificationsFromStorage());
-    };
-    initializeData();
+    setTestimonials(loadTestimonialsFromStorage());
+    setNotifications(loadNotificationsFromStorage());
   }, []);
 
-  const loadTestimonials = useCallback(async () => {
-    const storedTestimonials = await loadTestimonialsFromStorage();
+  const loadTestimonials = useCallback(() => {
+    const storedTestimonials = loadTestimonialsFromStorage();
     setTestimonials(storedTestimonials);
   }, []);
 
