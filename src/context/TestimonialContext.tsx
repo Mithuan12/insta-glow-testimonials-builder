@@ -3,7 +3,12 @@ import React, { createContext, useState, useContext, useCallback, useEffect } fr
 import { Testimonial, SMSNotification } from "@/types";
 import { TestimonialContextType } from "./testimonials/types";
 import { defaultTemplates } from "./testimonials/templateData";
-import { loadTestimonialsFromStorage, loadNotificationsFromStorage } from "./testimonials/storage";
+import { 
+  loadTestimonialsFromStorage, 
+  saveTestimonialsToStorage, 
+  loadNotificationsFromStorage, 
+  saveNotificationsToStorage
+} from "./testimonials/storage";
 import { useTestimonialActions } from "./testimonials/hooks";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
