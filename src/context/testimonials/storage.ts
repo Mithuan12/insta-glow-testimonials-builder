@@ -12,9 +12,10 @@ export const loadTestimonialsFromStorage = async (): Promise<Testimonial[]> => {
 
     if (error) throw error;
     
-    if (testimonials && testimonials.length > 0) {
-      localStorage.setItem("testimonials", JSON.stringify(testimonials));
-      return testimonials;
+    if (testimonials) {
+      const formattedTestimonials = Array.isArray(testimonials) ? testimonials : [];
+      localStorage.setItem("testimonials", JSON.stringify(formattedTestimonials));
+      return formattedTestimonials;
     }
 
     // Fallback to localStorage if no data in Supabase
