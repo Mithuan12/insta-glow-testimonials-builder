@@ -1,19 +1,18 @@
 
-import { useCallback } from 'react';
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { Testimonial, SMSNotification } from "@/types";
 import { saveTestimonialsToStorage, saveNotificationsToStorage } from "./storage";
 
 export const useTestimonialActions = (
   setTestimonials: React.Dispatch<React.SetStateAction<Testimonial[]>>,
-  setNotifications: React.Dispatch<React.SetStateAction<SMSNotification[]>>,
+  setNotifications: React.Dispatch<React.SetStateAction<SMSNotification[]>>
 ) => {
-  const { toast } = useToast();
-
-  const addTestimonial = useCallback(async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
+  const addTestimonial = async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
+    console.log("Adding new testimonial:", testimonial);
     const newTestimonial: Testimonial = {
       ...testimonial,
-      id: `testimonial-${Date.now()}`,
+      id: uuidv4(),
       createdAt: new Date().toISOString(),
       published: false,
     };
@@ -23,20 +22,15 @@ export const useTestimonialActions = (
       saveTestimonialsToStorage(updated);
       return updated;
     });
-    
-    toast({ title: "Success!", description: "Testimonial submitted successfully." });
-  }, [setTestimonials, toast]);
+  };
 
-  const addSMSNotification = useCallback(async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
-    const formId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-    const formUrl = `${window.location.origin}/form/${formId}`;
-    
+  const addSMSNotification = async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
     const newNotification: SMSNotification = {
       ...notification,
-      id: `sms-${Date.now()}`,
+      id: uuidv4(),
       createdAt: new Date().toISOString(),
-      status: 'sent',
-      formUrl,
+      formUrl: `${window.location.origin}/form/${uuidv4()}`,
+      status: "sent",
     };
     
     setNotifications(prev => {
@@ -44,9 +38,10 @@ export const useTestimonialActions = (
       saveNotificationsToStorage(updated);
       return updated;
     });
-    
-    toast({ title: "Success", description: `WhatsApp notification prepared.` });
-  }, [setNotifications, toast]);
+  };
 
-  return { addTestimonial, addSMSNotification };
+  return {
+    addTestimonial,
+    addSMSNotification,
+  };
 };

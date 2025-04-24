@@ -3,9 +3,12 @@ import { Testimonial, SMSNotification } from "@/types";
 
 export const loadTestimonialsFromStorage = (): Testimonial[] => {
   try {
+    console.log("Loading testimonials from storage");
     const stored = localStorage.getItem("testimonials");
     if (stored) {
-      return JSON.parse(stored);
+      const parsedData = JSON.parse(stored);
+      console.log("Loaded testimonials:", parsedData);
+      return parsedData;
     }
   } catch (err) {
     console.error("Error loading testimonials from storage:", err);
@@ -15,6 +18,7 @@ export const loadTestimonialsFromStorage = (): Testimonial[] => {
 
 export const saveTestimonialsToStorage = (testimonials: Testimonial[]): void => {
   try {
+    console.log("Saving testimonials to storage:", testimonials);
     localStorage.setItem("testimonials", JSON.stringify(testimonials));
   } catch (err) {
     console.error("Error saving testimonials to storage:", err);

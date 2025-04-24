@@ -1,9 +1,14 @@
 
-import React, { createContext, useState, useContext, useCallback } from "react";
+import React, { createContext, useState, useContext, useCallback, useEffect } from "react";
 import { Testimonial, SMSNotification } from "@/types";
 import { TestimonialContextType } from "./testimonials/types";
 import { defaultTemplates } from "./testimonials/templateData";
-import { loadTestimonialsFromStorage, loadNotificationsFromStorage } from "./testimonials/storage";
+import { 
+  loadTestimonialsFromStorage, 
+  saveTestimonialsToStorage, 
+  loadNotificationsFromStorage,
+  saveNotificationsToStorage
+} from "./testimonials/storage";
 import { useTestimonialActions } from "./testimonials/hooks";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
@@ -16,10 +21,26 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   
   const { addTestimonial, addSMSNotification } = useTestimonialActions(setTestimonials, setNotifications);
 
+  // Load testimonials on mount
+  useEffect(() => {
+    const initialLoad = async () => {
+      try {
+        await loadTestimonials();
+        await loadNotifications();
+      } catch (error) {
+        console.error("Error during initial data load:", error);
+      }
+    };
+    
+    initialLoad();
+  }, []);
+
   const loadTestimonials = useCallback(async () => {
     try {
       setLoading(true);
-      setTestimonials(loadTestimonialsFromStorage());
+      const storedTestimonials = loadTestimonialsFromStorage();
+      console.log("Loaded testimonials in context:", storedTestimonials);
+      setTestimonials(storedTestimonials);
     } catch (err) {
       console.error("Error loading testimonials:", err);
       setError("Failed to load testimonials");
@@ -30,7 +51,8 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
 
   const loadNotifications = useCallback(async () => {
     try {
-      setNotifications(loadNotificationsFromStorage());
+      const storedNotifications = loadNotificationsFromStorage();
+      setNotifications(storedNotifications);
     } catch (err) {
       console.error("Error loading notifications:", err);
       setError("Failed to load notifications");
@@ -38,11 +60,19 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   }, []);
 
   const updateTestimonial = useCallback(async (id: string, update: Partial<Testimonial>) => {
-    setTestimonials(prev => prev.map(t => t.id === id ? { ...t, ...update } : t));
+    setTestimonials(prev => {
+      const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
   }, []);
 
   const deleteTestimonial = useCallback(async (id: string) => {
-    setTestimonials(prev => prev.filter(t => t.id !== id));
+    setTestimonials(prev => {
+      const updated = prev.filter(t => t.id !== id);
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
   }, []);
 
   return (

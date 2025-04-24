@@ -27,7 +27,7 @@ type TestimonialFormProps = {
 };
 
 const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
-  const { addTestimonial, loadTestimonials } = useTestimonials();
+  const { addTestimonial } = useTestimonials();
   const { toast } = useToast();
   const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +45,6 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   });
 
   const handleFileSelect = (file: File) => {
-    // Validate file size (50MB limit)
     if (file.size > 50 * 1024 * 1024) {
       toast({
         title: "File Too Large",
@@ -101,10 +100,6 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
       
       await addTestimonial(testimonialData);
       
-      // After adding a testimonial, reload the testimonials list
-      console.log("Reloading testimonials after submission");
-      await loadTestimonials();
-
       form.reset();
       setMediaBlob(null);
       
