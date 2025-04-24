@@ -16,7 +16,7 @@ import {
 import { useTestimonials } from "@/context/TestimonialContext";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, WhatsApp } from "lucide-react";
+import { Loader2, MessageSquare } from "lucide-react";
 
 const formSchema = z.object({
   customerName: z.string().min(2, {
@@ -156,7 +156,7 @@ const SMSForm = () => {
                 </>
               ) : (
                 <>
-                  <WhatsApp className="mr-2 h-4 w-4" />
+                  <MessageSquare className="mr-2 h-4 w-4" />
                   Send via WhatsApp
                 </>
               )}
