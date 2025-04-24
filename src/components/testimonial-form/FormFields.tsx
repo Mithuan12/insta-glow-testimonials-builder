@@ -17,6 +17,7 @@ interface FormFieldsProps {
 const FormFields: React.FC<FormFieldsProps> = ({ form, mediaBlob, setMediaBlob }) => {
   const handleFileSelect = (file: File) => {
     setMediaBlob(file);
+    console.log("File selected in FormFields:", file.name);
   };
 
   return (

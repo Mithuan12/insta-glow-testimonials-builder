@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import FormFields from "./testimonial-form/FormFields";
 
 const TestimonialForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) => {
-  const { addTestimonial } = useTestimonials();
+  const { addTestimonial, loadTestimonials } = useTestimonials();
   const { toast } = useToast();
   const [mediaBlob, setMediaBlob] = useState<Blob | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,6 +64,9 @@ const TestimonialForm: React.FC<{ onSuccess?: () => void }> = ({ onSuccess }) =>
         mediaType: values.mediaType,
         mediaUrl,
       });
+      
+      // Reload testimonials to ensure the UI updates
+      await loadTestimonials();
       
       form.reset();
       setMediaBlob(null);
