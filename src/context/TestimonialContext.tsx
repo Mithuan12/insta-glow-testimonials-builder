@@ -1,22 +1,15 @@
 
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { Testimonial, Template, SMSNotification } from "@/types";
+import { Testimonial, SMSNotification } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-
-interface TestimonialContextType {
-  testimonials: Testimonial[];
-  templates: Template[];
-  notifications: SMSNotification[];
-  addTestimonial: (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => Promise<void>;
-  addSMSNotification: (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => Promise<void>;
-  updateTestimonial: (id: string, update: Partial<Testimonial>) => Promise<void>;
-  deleteTestimonial: (id: string) => Promise<void>;
-  loading: boolean;
-  error: string | null;
-  loadTestimonials: () => Promise<void>;
-  loadNotifications: () => Promise<void>;
-}
+import { TestimonialContextType } from "./testimonials/types";
+import { defaultTemplates } from "./testimonials/templateData";
+import {
+  loadTestimonialsFromStorage,
+  saveTestimonialsToStorage,
+  loadNotificationsFromStorage,
+  saveNotificationsToStorage,
+} from "./testimonials/storage";
 
 const TestimonialContext = createContext<TestimonialContextType | undefined>(undefined);
 
@@ -26,78 +19,26 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  // Predefined templates
-  const [templates] = useState<Template[]>([
-    {
-      id: "template-1",
-      name: "Simple Gradient",
-      thumbnail: "/templates/simple-gradient-thumb.jpg",
-      background: "bg-gradient-to-br from-gradient-start to-gradient-end",
-      textPosition: "center",
-      textAlignment: "center",
-      textColor: "text-white",
-      font: "font-sans"
-    },
-    {
-      id: "template-2",
-      name: "Clean White",
-      thumbnail: "/templates/clean-white-thumb.jpg",
-      background: "bg-white",
-      textPosition: "center",
-      textAlignment: "center",
-      textColor: "text-gray-900",
-      font: "font-serif"
-    },
-    {
-      id: "template-3",
-      name: "Dark Minimal",
-      thumbnail: "/templates/dark-minimal-thumb.jpg",
-      background: "bg-gray-900",
-      textPosition: "bottom",
-      textAlignment: "left",
-      textColor: "text-white",
-      font: "font-mono"
-    },
-  ]);
 
-  // Function to load testimonials from localStorage
   const loadTestimonials = async () => {
     try {
-      console.log("Loading testimonials from storage");
       setLoading(true);
-      const storedTestimonials = localStorage.getItem("testimonials");
-      if (storedTestimonials) {
-        const parsedTestimonials = JSON.parse(storedTestimonials);
-        console.log("Parsed testimonials:", parsedTestimonials);
-        setTestimonials(parsedTestimonials);
-      } else {
-        console.log("No stored testimonials found");
-        setTestimonials([]);
-      }
-      setLoading(false);
+      const loadedTestimonials = loadTestimonialsFromStorage();
+      setTestimonials(loadedTestimonials);
       return Promise.resolve();
     } catch (err) {
       console.error("Error loading testimonials:", err);
       setError("Failed to load testimonials");
-      setLoading(false);
       return Promise.reject(err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Function to load notifications from localStorage
   const loadNotifications = async () => {
     try {
-      console.log("Loading SMS notifications from storage");
-      const storedNotifications = localStorage.getItem("smsNotifications");
-      if (storedNotifications) {
-        const parsedNotifications = JSON.parse(storedNotifications);
-        console.log("Parsed notifications:", parsedNotifications);
-        setNotifications(parsedNotifications);
-      } else {
-        console.log("No stored SMS notifications found");
-        setNotifications([]);
-      }
+      const loadedNotifications = loadNotificationsFromStorage();
+      setNotifications(loadedNotifications);
       return Promise.resolve();
     } catch (err) {
       console.error("Error loading notifications:", err);
@@ -106,7 +47,6 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     }
   };
 
-  // Load data from localStorage on first render
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -123,23 +63,16 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     loadData();
   }, []);
 
-  // Save testimonials to localStorage whenever they change
   useEffect(() => {
-    console.log("Testimonials changed, saving to storage:", testimonials);
-    localStorage.setItem("testimonials", JSON.stringify(testimonials));
+    saveTestimonialsToStorage(testimonials);
   }, [testimonials]);
   
-  // Save notifications to localStorage whenever they change
   useEffect(() => {
-    console.log("Saving notifications to storage:", notifications);
-    localStorage.setItem("smsNotifications", JSON.stringify(notifications));
+    saveNotificationsToStorage(notifications);
   }, [notifications]);
 
   const addTestimonial = async (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
     try {
-      console.log("Adding testimonial:", testimonial); // Debug log
-      
-      // In a real app, this would be an API call
       const newTestimonial: Testimonial = {
         ...testimonial,
         id: `testimonial-${Date.now()}`,
@@ -147,12 +80,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
         published: false,
       };
       
-      // Update state with the new testimonial
-      setTestimonials(prev => {
-        const updated = [...prev, newTestimonial];
-        console.log("Updated testimonials:", updated);
-        return updated;
-      });
+      setTestimonials(prev => [...prev, newTestimonial]);
       
       toast({
         title: "Success!",
@@ -170,58 +98,33 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
       return Promise.reject(err);
     }
   };
-  
+
   const addSMSNotification = async (notification: Omit<SMSNotification, "id" | "createdAt" | "formUrl" | "status">) => {
     try {
-      // Log the input
-      console.log("Adding SMS notification with data:", notification);
-      
-      // Validate phone number
-      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-      let phoneNumber = notification.customerPhone;
-      
-      if (!phoneRegex.test(phoneNumber)) {
-        console.error("Invalid phone format:", phoneNumber);
-        throw new Error(`Invalid phone number format: ${phoneNumber}`);
-      }
-      
-      // Generate unique, shareable form URL
       const formId = Date.now().toString(36) + Math.random().toString(36).substr(2);
       const formUrl = `${window.location.origin}/form/${formId}`;
       
-      // Simulate SMS sending - in a real app, we would call a Twilio API or similar here
-      console.log(`Sending SMS to ${phoneNumber} with form URL: ${formUrl}`);
-      
-      // Create the new notification
       const newNotification: SMSNotification = {
         ...notification,
         id: `sms-${Date.now()}`,
         createdAt: new Date().toISOString(),
-        status: 'sent', // In real implementation, this would be 'pending' initially
+        status: 'sent',
         formUrl,
       };
       
-      console.log("Created new notification:", newNotification);
+      setNotifications(prev => [...prev, newNotification]);
       
-      // Update state with the new notification
-      setNotifications(prevNotifications => {
-        const updated = [...prevNotifications, newNotification];
-        console.log("Updated notifications:", updated);
-        return updated;
-      });
-      
-      // Show success toast
       toast({
-        title: "SMS Notification Sent",
-        description: `SMS notification to ${notification.customerName} has been sent.`,
+        title: "Success",
+        description: `WhatsApp notification to ${notification.customerName} has been prepared.`,
       });
       
       return Promise.resolve();
     } catch (err) {
-      console.error("Error sending SMS notification:", err);
+      console.error("Error creating notification:", err);
       toast({
         title: "Error",
-        description: `Failed to send SMS notification: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        description: "Failed to create notification",
         variant: "destructive",
       });
       return Promise.reject(err);
@@ -230,8 +133,6 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
 
   const updateTestimonial = async (id: string, update: Partial<Testimonial>) => {
     try {
-      console.log(`Updating testimonial ${id} with:`, update);
-      // In a real app, this would be an API call
       setTestimonials(testimonials.map(t => 
         t.id === id ? { ...t, ...update } : t
       ));
@@ -253,8 +154,6 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
 
   const deleteTestimonial = async (id: string) => {
     try {
-      console.log(`Deleting testimonial ${id}`);
-      // In a real app, this would be an API call
       setTestimonials(testimonials.filter(t => t.id !== id));
       toast({
         title: "Success!",
@@ -276,7 +175,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     <TestimonialContext.Provider
       value={{
         testimonials,
-        templates,
+        templates: defaultTemplates,
         notifications,
         addTestimonial,
         addSMSNotification,
