@@ -26,8 +26,8 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
     setNotifications(loadNotificationsFromStorage());
   }, []);
 
-  const loadTestimonials = useCallback(() => {
-    const storedTestimonials = loadTestimonialsFromStorage();
+  const loadTestimonials = useCallback(async () => {
+    const storedTestimonials = await loadTestimonialsFromStorage();
     setTestimonials(storedTestimonials);
   }, []);
 
