@@ -1,69 +1,55 @@
+/**
+ * storage.ts
+ * Handles data persistence using both Supabase and localStorage as a fallback.
+ * Provides functions to load and save testimonials and notifications.
+ */
 
 import { Testimonial, SMSNotification } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
+// Load testimonials with Supabase as primary storage and localStorage as fallback
 export const loadTestimonialsFromStorage = async (): Promise<Testimonial[]> => {
   try {
-    // Try loading from Supabase first
     const { data: testimonials, error } = await supabase
       .from('testimonials')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    
-    if (testimonials) {
-      const formattedTestimonials = Array.isArray(testimonials) ? testimonials : [];
-      localStorage.setItem("testimonials", JSON.stringify(formattedTestimonials));
-      return formattedTestimonials;
+
+    if (testimonials?.length) {
+      localStorage.setItem("testimonials", JSON.stringify(testimonials));
+      return testimonials;
     }
 
-    // Fallback to localStorage if no data in Supabase
-    const stored = localStorage.getItem("testimonials");
-    return stored ? JSON.parse(stored) : [];
+    return JSON.parse(localStorage.getItem("testimonials") || "[]");
   } catch (err) {
-    console.error("Error loading testimonials:", err);
-    // Final fallback
-    const stored = localStorage.getItem("testimonials");
-    return stored ? JSON.parse(stored) : [];
+    console.error("Storage error:", err);
+    return JSON.parse(localStorage.getItem("testimonials") || "[]");
   }
 };
 
+// Save testimonials to both Supabase and localStorage
 export const saveTestimonialsToStorage = async (testimonials: Testimonial[]): Promise<void> => {
   try {
-    // Save to localStorage first as backup
     localStorage.setItem("testimonials", JSON.stringify(testimonials));
-    
-    // Then save to Supabase
-    const { error } = await supabase
+
+    await supabase
       .from('testimonials')
-      .upsert(
-        testimonials.map(t => ({
-          ...t,
-          created_at: t.createdAt,
-        }))
-      );
-
-    if (error) throw error;
+      .upsert(testimonials.map(t => ({ ...t, created_at: t.createdAt })));
   } catch (err) {
-    console.error("Error saving testimonials:", err);
+    console.error("Save error:", err);
   }
 };
 
-export const loadNotificationsFromStorage = (): SMSNotification[] => {
-  try {
-    const stored = localStorage.getItem("smsNotifications");
-    return stored ? JSON.parse(stored) : [];
-  } catch (err) {
-    console.error("Error loading notifications:", err);
-    return [];
-  }
-};
+// Local storage operations for notifications
+export const loadNotificationsFromStorage = (): SMSNotification[] => 
+  JSON.parse(localStorage.getItem("smsNotifications") || "[]");
 
 export const saveNotificationsToStorage = (notifications: SMSNotification[]): void => {
   try {
     localStorage.setItem("smsNotifications", JSON.stringify(notifications));
   } catch (err) {
-    console.error("Error saving notifications:", err);
+    console.error("Notification save error:", err);
   }
 };
