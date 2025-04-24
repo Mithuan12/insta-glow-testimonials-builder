@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { TestimonialContextType, Testimonial, SMSNotification } from "./testimonials/types";
 import { loadTestimonialsFromStorage, saveTestimonialsToStorage, loadNotificationsFromStorage, saveNotificationsToStorage } from "./testimonials/storage";
 
@@ -14,44 +14,61 @@ export const useTestimonials = () => {
 };
 
 export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
-  const [notifications, setNotifications] = useState<SMSNotification[]>([]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(() => loadTestimonialsFromStorage());
+  const [notifications, setNotifications] = useState<SMSNotification[]>(() => loadNotificationsFromStorage());
 
-  const addTestimonial = (testimonial: Testimonial) => {
-    const updatedTestimonials = [...testimonials, testimonial];
-    setTestimonials(updatedTestimonials);
-    saveTestimonialsToStorage(updatedTestimonials);
+  const addTestimonial = (testimonial: Omit<Testimonial, "id" | "createdAt" | "published">) => {
+    const newTestimonial = {
+      ...testimonial,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      published: false,
+    };
+    
+    setTestimonials(prev => {
+      const updated = [...prev, newTestimonial];
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
   };
 
-  const updateTestimonial = (id: string, updatedTestimonial: Testimonial) => {
-    const updatedTestimonials = testimonials.map(t => 
-      t.id === id ? updatedTestimonial : t
-    );
-    setTestimonials(updatedTestimonials);
-    saveTestimonialsToStorage(updatedTestimonials);
+  const updateTestimonial = (id: string, update: Partial<Testimonial>) => {
+    setTestimonials(prev => {
+      const updated = prev.map(t => t.id === id ? { ...t, ...update } : t);
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
   };
 
   const deleteTestimonial = (id: string) => {
-    const updatedTestimonials = testimonials.filter(t => t.id !== id);
-    setTestimonials(updatedTestimonials);
-    saveTestimonialsToStorage(updatedTestimonials);
+    setTestimonials(prev => {
+      const updated = prev.filter(t => t.id !== id);
+      saveTestimonialsToStorage(updated);
+      return updated;
+    });
   };
 
-  const addSMSNotification = (notification: SMSNotification) => {
-    const updatedNotifications = [...notifications, notification];
-    setNotifications(updatedNotifications);
-    saveNotificationsToStorage(updatedNotifications);
+  const addSMSNotification = (notification: Omit<SMSNotification, "id" | "createdAt" | "status">) => {
+    const newNotification = {
+      ...notification,
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      status: "pending",
+    };
+
+    setNotifications(prev => {
+      const updated = [...prev, newNotification];
+      saveNotificationsToStorage(updated);
+      return updated;
+    });
   };
 
-  const loadTestimonials = () => {
-    const loaded = loadTestimonialsFromStorage();
-    setTestimonials(loaded);
-  };
-
-  const loadNotifications = () => {
-    const loaded = loadNotificationsFromStorage();
-    setNotifications(loaded);
-  };
+  useEffect(() => {
+    const loadedTestimonials = loadTestimonialsFromStorage();
+    const loadedNotifications = loadNotificationsFromStorage();
+    setTestimonials(loadedTestimonials);
+    setNotifications(loadedNotifications);
+  }, []);
 
   const value = {
     testimonials,
@@ -59,9 +76,7 @@ export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ c
     addTestimonial,
     updateTestimonial,
     deleteTestimonial,
-    addSMSNotification,
-    loadTestimonials,
-    loadNotifications
+    addSMSNotification
   };
 
   return (
@@ -70,3 +85,5 @@ export const TestimonialProvider: React.FC<{ children: React.ReactNode }> = ({ c
     </TestimonialContext.Provider>
   );
 };
+
+export default TestimonialProvider;
