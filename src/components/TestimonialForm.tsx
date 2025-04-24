@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useTestimonials } from "@/context/TestimonialContext";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import MediaTypeSelector from "./testimonial-form/MediaTypeSelector";
 import RatingStars from "./testimonial-form/RatingStars";
@@ -58,14 +58,14 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
     setMediaBlob(file);
     toast({
       title: "File Selected",
-      description: `${file.type.startsWith('image/') ? 'Image' : 
-                    file.type.startsWith('audio/') ? 'Audio' : 'Video'} file has been selected.`,
+      description: `${file.type.startsWith('audio/') ? 'Audio' : 'Video'} file has been selected.`,
     });
   };
 
   const onSubmit = async (values: TestimonialFormData) => {
     try {
       setIsSubmitting(true);
+      console.log("Submitting testimonial form:", values);
       
       let mediaUrl = undefined;
       
@@ -76,9 +76,13 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
           .from('testimonial-media')
           .upload(filename, mediaBlob);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Storage upload error:", error);
+          throw error;
+        }
         
         if (data) {
+          console.log("File uploaded successfully:", data);
           mediaUrl = data.path;
         }
       }
@@ -93,7 +97,12 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
         mediaUrl,
       };
       
+      console.log("Sending testimonial data to context:", testimonialData);
+      
       await addTestimonial(testimonialData);
+      
+      // After adding a testimonial, reload the testimonials list
+      console.log("Reloading testimonials after submission");
       await loadTestimonials();
 
       form.reset();
@@ -118,59 +127,73 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
   };
 
   return (
-    <Card className="w-full overflow-hidden rounded-xl border-none bg-white/90 backdrop-blur-sm shadow-lg">
-      <CardContent className="p-6">
-        <h2 className="text-2xl font-bold mb-4 text-center bg-gradient-to-r from-brand-500 to-purple-500 bg-clip-text text-transparent">
-          Share Your Story
-        </h2>
-        
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>Share Your Experience</CardTitle>
+        <CardDescription>
+          We appreciate your feedback! Please share your experience with us.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <MediaTypeSelector form={form} onFileSelect={handleFileSelect} />
 
-            <div className="space-y-4">
-              <FormField
-                control={form.control}
-                name="customerName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            {mediaBlob && (
+              <FormItem>
+                <FormLabel>Selected Media File</FormLabel>
+                <FormControl>
+                  <div className="p-4 border rounded-md bg-muted">
+                    <p className="text-sm text-muted-foreground">
+                      File selected: {(mediaBlob as File).name}
+                    </p>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
 
-              <FormField
-                control={form.control}
-                name="customerPhone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="+1234567890" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="customerName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-              <FormField
-                control={form.control}
-                name="customerEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email (Optional)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="john@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="customerPhone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+1234567890" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="customerEmail"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="john@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <RatingStars form={form} />
             
@@ -183,7 +206,7 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
                   <FormControl>
                     <Textarea
                       placeholder="Share your experience with our product or service..."
-                      className="min-h-[80px]"
+                      className="min-h-[100px]"
                       {...field}
                     />
                   </FormControl>
@@ -191,10 +214,9 @@ const TestimonialForm: React.FC<TestimonialFormProps> = ({ onSuccess }) => {
                 </FormItem>
               )}
             />
-            
             <Button 
               type="submit" 
-              className="w-full bg-gradient-to-r from-brand-500 to-purple-500 hover:from-brand-600 hover:to-purple-600 transition-all"
+              className="w-full"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

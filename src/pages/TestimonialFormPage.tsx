@@ -3,35 +3,30 @@ import React from "react";
 import TestimonialForm from "@/components/TestimonialForm";
 import { TestimonialProvider } from "@/context/TestimonialContext";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
 
 const FormContent = () => {
   const [submitted, setSubmitted] = React.useState(false);
   
   return submitted ? (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center max-w-md p-6 bg-white/90 backdrop-blur-sm rounded-xl shadow-lg"
-    >
-      <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-brand-600 to-purple-600 text-transparent bg-clip-text">Thank You!</h1>
+    <div className="text-center max-w-md">
+      <h1 className="text-3xl font-bold gradient-text mb-4">Thank You!</h1>
       <p className="text-xl mb-6">Your testimonial has been submitted successfully.</p>
-      <Button onClick={() => window.close()}>Close Window</Button>
-    </motion.div>
+      <Button variant="outline" onClick={() => window.close()}>Close Window</Button>
+    </div>
   ) : (
-    <motion.div 
-      initial={{ opacity: 0, scale: 0.95 }} 
-      animate={{ opacity: 1, scale: 1 }}
-      className="w-full max-w-md"
-    >
+    <div className="w-full max-w-md">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold gradient-text mb-2">Share Your Feedback</h1>
+        <p className="text-muted-foreground">We value your opinion!</p>
+      </div>
       <TestimonialForm onSuccess={() => setSubmitted(true)} />
-    </motion.div>
+    </div>
   );
 };
 
 const TestimonialFormPage = () => (
   <TestimonialProvider>
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-b from-brand-500 to-purple-500">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gradient-to-b from-brand-50 to-white">
       <FormContent />
     </div>
   </TestimonialProvider>
