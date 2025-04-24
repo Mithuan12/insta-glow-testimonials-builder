@@ -4,36 +4,49 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const loadTestimonialsFromStorage = async (): Promise<Testimonial[]> => {
   try {
+    // Try loading from Supabase first
     const { data: testimonials, error } = await supabase
       .from('testimonials')
       .select('*')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return testimonials || [];
+    
+    if (testimonials) {
+      const formattedTestimonials = Array.isArray(testimonials) ? testimonials : [];
+      localStorage.setItem("testimonials", JSON.stringify(formattedTestimonials));
+      return formattedTestimonials;
+    }
+
+    // Fallback to localStorage if no data in Supabase
+    const stored = localStorage.getItem("testimonials");
+    return stored ? JSON.parse(stored) : [];
   } catch (err) {
     console.error("Error loading testimonials:", err);
-    return [];
+    // Final fallback
+    const stored = localStorage.getItem("testimonials");
+    return stored ? JSON.parse(stored) : [];
   }
 };
 
-export const saveTestimonialsToStorage = async (testimonial: Testimonial): Promise<void> => {
+export const saveTestimonialsToStorage = async (testimonials: Testimonial[]): Promise<void> => {
   try {
+    // Save to localStorage first as backup
+    localStorage.setItem("testimonials", JSON.stringify(testimonials));
+    
+    // Then save to Supabase
     const { error } = await supabase
       .from('testimonials')
-      .insert({
-        id: testimonial.id,
-        name: testimonial.name,
-        rating: testimonial.rating,
-        message: testimonial.message,
-        mediaUrl: testimonial.mediaUrl,
-        mediaType: testimonial.mediaType,
-        created_at: new Date().toISOString()
-      });
+      .upsert(
+        testimonials.map(t => ({
+          ...t,
+          created_at: t.createdAt,
+        }))
+      );
 
     if (error) throw error;
   } catch (err) {
-    console.error("Error saving testimonial:", err);
+    console.error("Error saving testimonials:", err);
   }
 };
 
