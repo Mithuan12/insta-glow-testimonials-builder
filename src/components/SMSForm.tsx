@@ -41,21 +41,16 @@ const SMSForm = () => {
   });
 
   const formatPhoneNumber = (phone: string): string => {
-    // Strip any non-numeric characters
-    const cleaned = phone.replace(/\D/g, '');
-    
-    // Ensure it has at least 10 digits
-    if (cleaned.length < 10) {
-      return cleaned;
-    }
-    
-    // Add country code if missing (assuming international format)
-    if (cleaned.length === 10) {
-      return `+1${cleaned}`;
-    } else if (cleaned.startsWith('1') && cleaned.length === 11) {
+    // If number already has a + prefix, just clean non-numeric chars after it
+    if (phone.startsWith('+')) {
+      const cleaned = phone.substring(1).replace(/\D/g, '');
       return `+${cleaned}`;
     }
     
+    // Clean any non-numeric characters
+    const cleaned = phone.replace(/\D/g, '');
+    
+    // Return with + prefix
     return `+${cleaned}`;
   };
 
