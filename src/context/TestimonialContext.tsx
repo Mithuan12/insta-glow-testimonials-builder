@@ -1,7 +1,7 @@
 
 import React, { createContext, useState, useContext, useEffect } from "react";
 import { Testimonial, Template, SMSNotification } from "@/types";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TestimonialContextType {
@@ -65,6 +65,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
   const loadTestimonials = async () => {
     try {
       console.log("Loading testimonials from storage");
+      setLoading(true);
       const storedTestimonials = localStorage.getItem("testimonials");
       if (storedTestimonials) {
         const parsedTestimonials = JSON.parse(storedTestimonials);
@@ -72,11 +73,14 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
         setTestimonials(parsedTestimonials);
       } else {
         console.log("No stored testimonials found");
+        setTestimonials([]);
       }
+      setLoading(false);
       return Promise.resolve();
     } catch (err) {
       console.error("Error loading testimonials:", err);
       setError("Failed to load testimonials");
+      setLoading(false);
       return Promise.reject(err);
     }
   };
@@ -121,10 +125,8 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
 
   // Save testimonials to localStorage whenever they change
   useEffect(() => {
-    if (testimonials.length > 0) {
-      console.log("Saving testimonials to storage:", testimonials);
-      localStorage.setItem("testimonials", JSON.stringify(testimonials));
-    }
+    console.log("Testimonials changed, saving to storage:", testimonials);
+    localStorage.setItem("testimonials", JSON.stringify(testimonials));
   }, [testimonials]);
   
   // Save notifications to localStorage whenever they change
@@ -228,6 +230,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
 
   const updateTestimonial = async (id: string, update: Partial<Testimonial>) => {
     try {
+      console.log(`Updating testimonial ${id} with:`, update);
       // In a real app, this would be an API call
       setTestimonials(testimonials.map(t => 
         t.id === id ? { ...t, ...update } : t
@@ -250,6 +253,7 @@ export const TestimonialProvider = ({ children }: { children: React.ReactNode })
 
   const deleteTestimonial = async (id: string) => {
     try {
+      console.log(`Deleting testimonial ${id}`);
       // In a real app, this would be an API call
       setTestimonials(testimonials.filter(t => t.id !== id));
       toast({
